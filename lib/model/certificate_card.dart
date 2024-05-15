@@ -52,7 +52,7 @@ class CertificateCard extends StatelessWidget {
                   children: [
                     Text(
                       certificateName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -60,7 +60,7 @@ class CertificateCard extends StatelessWidget {
                     const SizedBox(height: 15),
                     Text(
                       organizationName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Colors.grey,
                       ),
