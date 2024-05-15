@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'dart:html' as html;
 
 class CertificateCard extends StatelessWidget {
   final String certificateName;
@@ -14,11 +16,10 @@ class CertificateCard extends StatelessWidget {
     required this.imagePath,
   });
   
-  Future<void> _downloadCertificate(String url) async {
-      final response = await http.get(Uri.parse(url));
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      final file = File('${documentsDirectory.path}/certificate.jpg');
-      await file.writeAsBytes(response.bodyBytes);
+  Future<void> _downloadCertificate(String assetPath) async {
+    final html.AnchorElement anchorElement = html.AnchorElement(href: assetPath)
+      ..setAttribute("download", "certificate.jpg")
+      ..click();
   }
 
   @override
