@@ -1,34 +1,40 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class CertificateCard extends StatelessWidget {
-  final String certificateName;
-  final String organizationName;
+class EducationCard extends StatelessWidget {
+  final String name;
+  final String location;
+  final String years;
   final String imagePath;
+  final String mapsUrl;
 
-  const CertificateCard({
-    required this.certificateName,
-    required this.organizationName,
+  const EducationCard({
+    required this.name,
+    required this.location,
+    required this.years,
     required this.imagePath,
+    required this.mapsUrl,
   });
 
-  Future<void> _downloadCertificate(String assetPath) async {
-    final html.AnchorElement anchorElement = html.AnchorElement(href: assetPath)
-      ..setAttribute("download", "certificate.jpg")
-      ..click();
+  Future<void> _launchMapURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        _downloadCertificate(imagePath); // Call download function
+        _launchMapURL(mapsUrl); // Launch map URL when tapped
       },
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 150.w, // Set maximum width for the card
-          maxHeight: 200.h, // Set maximum height for the card
+          maxHeight: 250.h, // Set maximum height for the card
         ),
         child: Card(
           elevation: 3,
@@ -57,7 +63,7 @@ class CertificateCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        certificateName,
+                        name,
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.bold,
@@ -66,7 +72,7 @@ class CertificateCard extends StatelessWidget {
                       ),
                       SizedBox(height: 5.h), // Reduced space between texts
                       Text(
-                        organizationName,
+                        "Location : $location",
                         style: TextStyle(
                           fontSize: 14.sp,
                         ),
