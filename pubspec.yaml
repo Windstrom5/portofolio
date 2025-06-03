@@ -30,22 +30,31 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  pdf: ^3.10.1           # For PDF creation and manipulation
+  path_provider: ^2.1.1
+  permission_handler: ^11.0.1
+  printing: ^5.12.0
+  flutter_html_to_pdf: ^0.6.0  # For HTML to PDF
+  screenshot: ^3.0.0        # For capturing image from widget
+  file_picker: ^6.1.1          # Optional: for saving locatio
   animate_do: ^3.3.4
+  htmltopdfwidgets: ^1.0.5
+  flutter_html: ^3.0.0-beta
+  universal_html: ^2.2.4
   font_awesome_flutter: ^10.7.0
   google_fonts: ^6.2.1
   url_launcher: ^6.2.6
-  webview_flutter: ^4.7.0
+  webview_flutter: ^2.0.4
   cached_network_image: ^3.3.1
   http: ^1.2.1
-  path_provider: ^2.1.3
+  open_file: ^3.2.1
   dev_icons: ^1.0.0
   flutter_cache_manager: ^3.3.2
   flutter_screenutil: ^5.9.1
-
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -107,6 +116,7 @@ flutter:
     - assets/atma.jpg
     - assets/bg.jpg
     - assets/bang dream.gif
+    - assets/myself.jpg
   fonts:
     - family: Retro
       fonts:

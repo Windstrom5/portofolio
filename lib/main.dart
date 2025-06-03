@@ -5,9 +5,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:project_test/model/Education_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'model/ProjectGrid.dart';
+import 'model/resume_generator.dart';
 import 'model/certificate_card.dart'; // Importing the CertificateCard class
 import 'package:dev_icons/dev_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -315,6 +320,37 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
+            SizedBox(height: 20.h),
+
+            Text(
+              "Want a quick summary of my skills and experience?",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 15.sp,
+                fontFamily: 'Merriweather-Light',
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: 10.h),
+
+            ElevatedButton.icon(
+              onPressed: () async {
+                final resumePdf = ResumePdf();
+                final pdfBytes = await resumePdf.generate();
+                resumePdf.downloadPdfWeb(pdfBytes, 'resume_angga.pdf');
+              },
+              icon: Icon(Icons.picture_as_pdf),
+              label: Text("Download Resume"),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -417,32 +453,28 @@ class _HomePageState extends State<HomePage> {
                       name: "SDN 001 Sungai Kunjang",
                       location: "Samarinda",
                       years: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
-                      imagePath:
-                          "assets/sdn.jpg",
+                      imagePath: "assets/sdn.jpg",
                       mapsUrl:
                           "https://www.google.com/maps/place/SD+Negeri+001/@-0.498135,117.1203361,17z/data=!3m1!4b1!4m6!3m5!1s0x2df67efe8db30583:0x5f632eb0108b6f42!8m2!3d-0.498135!4d117.122911!16s%2Fg%2F11b7q6zjzb?entry=ttu"),
                   EducationCard(
                       name: "SMPN 16 Loa Bakung",
                       location: "Samarinda",
                       years: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
-                      imagePath:
-                          "assets/smpn.jpg",
+                      imagePath: "assets/smpn.jpg",
                       mapsUrl:
                           "https://www.google.com/maps/place/SMP+Negeri+16+Samarinda/@-0.5315706,117.0882096,17z/data=!3m1!4b1!4m6!3m5!1s0x2df67fd303b28c2b:0x65e7eeb487ccff3e!8m2!3d-0.5315706!4d117.0907845!16s%2Fg%2F11fn9fmj3c?entry=ttu"),
                   EducationCard(
                       name: "SMAN 08",
                       location: "Samarinda",
                       years: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
-                      imagePath:
-                          "assets/sman.jpg",
+                      imagePath: "assets/sman.jpg",
                       mapsUrl:
                           "https://www.google.com/maps/place/SMA+Negeri+8+Samarinda/@-0.5289858,117.1087201,17z/data=!3m1!4b1!4m6!3m5!1s0x2df67e2537a0009d:0x8f54a57b881beb8a!8m2!3d-0.5289858!4d117.111295!16s%2Fg%2F1hbpx3flk?entry=ttu"),
                   EducationCard(
                       name: "Universitas Atma Jaya Yogyakarta - Informatika",
                       location: "D.I. Yogyakarta",
                       years: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
-                      imagePath:
-                          "assets/atma.jpg",
+                      imagePath: "assets/atma.jpg",
                       mapsUrl:
                           "https://www.google.com/maps/place/Universitas+Atma+Jaya+Yogyakarta+-+Kampus+3+Gedung+Bonaventura+Babarsari/@-7.7794195,110.4135542,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7a59f1fb2f2b45:0x20986e2fe9c79cdd!8m2!3d-7.7794195!4d110.4161291!16s%2Fg%2F11cfg5l4w?entry=ttu"),
                 ],
