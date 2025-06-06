@@ -8,21 +8,21 @@ class ResumePdf {
   final pw.Document pdf = pw.Document();
 
   Future<Uint8List> generate() async {
-    final Uint8List photoBytes = await rootBundle.load('assets/myself.jpg').then((data) => data.buffer.asUint8List());
+    final Uint8List photoBytes = await rootBundle
+        .load('assets/myself.jpg')
+        .then((data) => data.buffer.asUint8List());
     final pw.MemoryImage photo = pw.MemoryImage(photoBytes);
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(10), // very small margin to fit all content
+        margin: pw.EdgeInsets.all(10),
         build: (context) {
           return pw.Container(
-            width: PdfPageFormat.a4.width - 20,
-            height: PdfPageFormat.a4.height - 20,
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header: smaller photo + name + contact info
+                // Header
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
@@ -30,7 +30,8 @@ class ResumePdf {
                       width: 80,
                       height: 80,
                       decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.blue800, width: 2),
+                        border:
+                            pw.Border.all(color: PdfColors.blue800, width: 2),
                         borderRadius: pw.BorderRadius.circular(40),
                       ),
                       child: pw.ClipOval(
@@ -70,65 +71,158 @@ class ResumePdf {
                 ),
                 pw.SizedBox(height: 15),
 
-                // Personal Details Table
                 _sectionTitle('Personal Details', fontSize: 14),
                 _personalDetailsTable(fontSize: 9),
                 pw.SizedBox(height: 12),
 
-                // Profile
                 _sectionTitle('Profile', fontSize: 14),
                 pw.Text(
-                  'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development. Recently graduated, I bring hands-on experience building responsive, user-friendly applications using technologies like Laravel, Kotlin, Java, and Vue.js. Passionate about clean architecture, scalable backend systems, and intuitive UIs. I\'m eager to grow in a collaborative and innovative environment.',
-                  style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                  'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development... ',
+                  style: pw.TextStyle(fontSize: 9),
                 ),
                 pw.SizedBox(height: 12),
 
-                // Skills
                 _sectionTitle('Skills', fontSize: 14),
                 _skillsWrap([
-                  'Vue.js', 'Kotlin', 'Laravel', 'Java', 'PostgreSQL', 'MySQL',
-                  'Android Studio', 'VS Code', 'CodeIgniter', 'Premiere Pro', 'Photoshop', 'NetBeans IDE',
+                  'Vue.js',
+                  'Kotlin',
+                  'Laravel',
+                  'Java',
+                  'PostgreSQL',
+                  'MySQL',
+                  'Android Studio',
+                  'VS Code',
+                  'CodeIgniter',
+                  'Premiere Pro',
+                  'Photoshop',
+                  'NetBeans IDE',
                 ]),
-                pw.SizedBox(height: 12),
+                pw.SizedBox(height: 6),
 
-                // Professional Experience
-                _sectionTitle('Professional Experience', fontSize: 14),
-                _jobItem(
-                  title: 'Software Programmer - PT. Kilang Pertamina Internasional RU VII Kasim',
-                  duration: 'September 2023 - Januari 2024',
-                  points: [
-                    'Developed a mobile overtime tracking application using Kotlin (Android) for internal employee use.',
-                    'Integrated a secure and scalable backend with Laravel and PostgreSQL to manage overtime submissions and approvals.',
-                    'Collaborated with HR and IT teams to ensure accurate data handling and seamless user experience across departments.',
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      flex: 1,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          _sectionTitle('Professional Experience',
+                              fontSize: 14),
+                          _jobItem(
+                            title:
+                                'Software Programmer - PT. Kilang Pertamina Internasional RU VII Kasim',
+                            duration: 'Sep 2023 - Jan 2024',
+                            points: [
+                              'Developed mobile overtime tracking app with Kotlin.',
+                              'Backend with Laravel + PostgreSQL.',
+                              'Collaborated with HR and IT teams.',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 8),
+                          _jobItem(
+                            title:
+                                'Volunteer Instructor - SDN Sendangsari (KKN Program)',
+                            duration: 'July 2023',
+                            points: [
+                              'Trained students in Word/Excel.',
+                              'Designed tailored learning materials.',
+                              'Supported computer literacy.',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 12),
+                          _sectionTitle('Education', fontSize: 14),
+                          pw.Text(
+                            'BSc Informatics - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nSMAN 8 Samarinda (2016 - 2020)',
+                            style: pw.TextStyle(fontSize: 9),
+                          ),
+                          pw.SizedBox(height: 12),
+                          _sectionTitle('Certificates', fontSize: 14),
+                          pw.Bullet(
+                              text:
+                                  'Researcher Management and Leadership Training, 2024',
+                              style: pw.TextStyle(fontSize: 9)),
+                          pw.Bullet(
+                              text: 'EnglishScore, 2025',
+                              style: pw.TextStyle(fontSize: 9)),
+                        ],
+                      ),
+                    ),
+                    pw.Container(
+                      width: 1,
+                      height: 400,
+                      margin: pw.EdgeInsets.symmetric(horizontal: 10),
+                      color: PdfColors.grey400,
+                    ),
+                    pw.Expanded(
+                      flex: 1,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          _sectionTitle('Projects', fontSize: 14),
+                          _jobItem(
+                            title: 'Diet Gamifikasi Android App',
+                            duration: '2024',
+                            points: [
+                              'Gamified fitness & diet tracker in Kotlin.',
+                              'Use Laravel for backend/auth.',
+                              'Use Postgree As Server.',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 8),
+                          _jobItem(
+                            title: 'Personal Portfolio Website',
+                            duration: '2024',
+                            points: [
+                              'Built with Flutter Web.',
+                              'Animated UI with resume PDF export.',
+                              'Includes project & education showcase.',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 8),
+                          _jobItem(
+                            title: 'Workhubs',
+                            duration: '2024',
+                            points: [
+                              'Android app to track employee activities and manage company data.',
+                              'Supports QR-based attendance system for daily presence.',
+                              'Includes overtime and official duty logging features.',
+                              'Enables company and employee data management in one platform.',
+                              'Built with Kotlin (Android) and Laravel + PostgreSQL (Backend).',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 8),
+                          _jobItem(
+                            title: 'Go-Fit Android App',
+                            duration: '2023 - 2024',
+                            points: [
+                              'Gym operational management app for instructors and member.',
+                              'Tracks daily gym activities and attendance.',
+                              'Supports multiple instructors and class management.',
+                              'Built with Kotlin (Android) and Laravel + Vue.Js (Web Version).',
+                            ],
+                            fontSize: 9,
+                          ),
+                          pw.SizedBox(height: 8),
+                          pw.UrlLink(
+                            destination: 'https://github.com/Windstrom5',
+                            child: pw.Text('See more on GitHub',
+                                style: pw.TextStyle(
+                                    fontSize: 9,
+                                    color: PdfColors.blue,
+                                    decoration: pw.TextDecoration.underline)),
+                          ),
+                          pw.SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
                   ],
-                  fontSize: 9,
                 ),
-                pw.SizedBox(height: 8),
-                _jobItem(
-                  title: 'Volunteer Instructor - SDN Sendangsari (KKN Program)',
-                  duration: 'July 2023',
-                  points: [
-                    'Conducted Microsoft Word and Excel training sessions for elementary school students over 2 Times.',
-                    'Designed easy-to-understand materials tailored for young learners.',
-                    'Supported students in developing basic computer literacy skills during community service (KKN).',
-                  ],
-                  fontSize: 9,
-                ),
-                pw.SizedBox(height: 12),
-
-                // Education
-                _sectionTitle('Education', fontSize: 14),
-                pw.Text(
-                  'Bachelor of Science in Informatics\nUniversitas Atma Jaya Yogyakarta (2020 - 2025)\n\n'
-                  'Biological and Physical Sciences\nSMAN 8 Samarinda (2016 - 2020)',
-                  style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
-                ),
-                pw.SizedBox(height: 12),
-
-                // Certificates
-                _sectionTitle('Certificates', fontSize: 14),
-                pw.Bullet(text: 'Researcher Management and Leadership Training, 2024', style: pw.TextStyle(fontSize: 9)),
-                pw.Bullet(text: 'EnglishScore, 2025', style: pw.TextStyle(fontSize: 9)),
               ],
             ),
           );
@@ -150,9 +244,6 @@ class ResumePdf {
           color: PdfColors.blue600,
           letterSpacing: 1.1,
           decoration: pw.TextDecoration.underline,
-          decorationColor: PdfColors.blue600,
-          decorationThickness: 1.8,
-          decorationStyle: pw.TextDecorationStyle.solid,
         ),
       ),
     );
@@ -169,7 +260,8 @@ class ResumePdf {
         _tableRow('Date of Birth', 'November 20, 2002', fontSize),
         _tableRow('Address', 'Sleman, Yogyakarta', fontSize),
         _tableRow('Nationality', 'Indonesian', fontSize),
-        _tableRow('Languages', 'English (Fluent), Bahasa Indonesia (Native)', fontSize),
+        _tableRow('Languages', 'English (Fluent), Bahasa Indonesia (Native)',
+            fontSize),
       ],
     );
   }
@@ -180,7 +272,10 @@ class ResumePdf {
         padding: const pw.EdgeInsets.all(4),
         child: pw.Text(
           label,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blue800, fontSize: fontSize),
+          style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blue800,
+              fontSize: fontSize),
         ),
       ),
       pw.Padding(
@@ -243,7 +338,8 @@ class ResumePdf {
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: points
-              .map((p) => pw.Bullet(text: p, style: pw.TextStyle(fontSize: fontSize)))
+              .map((p) =>
+                  pw.Bullet(text: p, style: pw.TextStyle(fontSize: fontSize)))
               .toList(),
         ),
       ],
