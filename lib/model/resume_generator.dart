@@ -164,7 +164,7 @@ class ResumePdf {
                           _sectionTitle('Projects', fontSize: 14),
                           _jobItem(
                             title: 'Diet Gamifikasi Android App',
-                            duration: '2024',
+                            duration: '2025',
                             points: [
                               'Gamified fitness & diet tracker in Kotlin.',
                               'Use Laravel for backend/auth.',
@@ -175,7 +175,7 @@ class ResumePdf {
                           pw.SizedBox(height: 8),
                           _jobItem(
                             title: 'Personal Portfolio Website',
-                            duration: '2024',
+                            duration: '2025',
                             points: [
                               'Built with Flutter Web.',
                               'Animated UI with resume PDF export.',
