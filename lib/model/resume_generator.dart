@@ -77,7 +77,7 @@ class ResumePdf {
 
                 _sectionTitle('Profile', fontSize: 14),
                 pw.Text(
-                  'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development... ',
+                    'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development. ',
                   style: pw.TextStyle(fontSize: 9),
                 ),
                 pw.SizedBox(height: 12),
@@ -97,7 +97,7 @@ class ResumePdf {
                   'Photoshop',
                   'NetBeans IDE',
                 ]),
-                pw.SizedBox(height: 6),
+                pw.SizedBox(height: 12),
 
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -135,7 +135,7 @@ class ResumePdf {
                           pw.SizedBox(height: 12),
                           _sectionTitle('Education', fontSize: 14),
                           pw.Text(
-                            'BSc Informatics - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nSMAN 8 Samarinda (2016 - 2020)',
+                            'Bachelor of Computer Science - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nGPA: 3.59 / 4.00\n\nSMAN 8 Samarinda (2016 - 2020)',
                             style: pw.TextStyle(fontSize: 9),
                           ),
                           pw.SizedBox(height: 12),
