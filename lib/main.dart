@@ -429,6 +429,12 @@ class _HomePageState extends State<HomePage> {
                     organizationName: "University of Colorado System",
                     imagePath: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
                   ),
+                  CertificateCard(
+                    certificateName:
+                        "English Score",
+                    organizationName: "British Council",
+                    imagePath: "assets/EnglishScore.jpg",
+                  ),
                 ],
               ),
             ],
