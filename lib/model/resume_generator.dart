@@ -135,7 +135,7 @@ class ResumePdf {
                           pw.SizedBox(height: 12),
                           _sectionTitle('Education', fontSize: 14),
                           pw.Text(
-                            'Bachelor of Computer Science - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nGPA: 3.59 / 4.00\n\nSMAN 8 Samarinda (2016 - 2020)',
+                            'Bachelor of Computer Science - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nGPA: 3.52 / 4.00\n\nSMAN 8 Samarinda (2016 - 2020)',
                             style: pw.TextStyle(fontSize: 9),
                           ),
                           pw.SizedBox(height: 12),
