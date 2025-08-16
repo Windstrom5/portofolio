@@ -6,6 +6,15 @@
       "request": "launch",
       "type": "dart",
       "deviceId": "chrome"
+    },
+    {
+      "name": "Flutter Web (Brave)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": [
+        "--chrome-binary=C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+      ]
     }
   ]
 }

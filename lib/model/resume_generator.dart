@@ -13,218 +13,284 @@ class ResumePdf {
         .then((data) => data.buffer.asUint8List());
     final pw.MemoryImage photo = pw.MemoryImage(photoBytes);
 
+    // ========== PAGE 1 ==========
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(10),
+        margin: const pw.EdgeInsets.all(10),
         build: (context) {
-          return pw.Container(
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Header
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    pw.Container(
-                      width: 80,
-                      height: 80,
-                      decoration: pw.BoxDecoration(
-                        border:
-                            pw.Border.all(color: PdfColors.blue800, width: 2),
-                        borderRadius: pw.BorderRadius.circular(40),
-                      ),
-                      child: pw.ClipOval(
-                        child: pw.Image(photo, fit: pw.BoxFit.cover),
-                      ),
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Container(
+                    width: 80,
+                    height: 80,
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.blue800, width: 2),
+                      borderRadius: pw.BorderRadius.circular(40),
                     ),
-                    pw.SizedBox(width: 15),
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            'Angga Nugraha Putra S.Kom',
-                            style: pw.TextStyle(
-                              fontSize: 22,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.blue800,
-                            ),
+                    child: pw.ClipOval(child: pw.Image(photo, fit: pw.BoxFit.cover)),
+                  ),
+                  pw.SizedBox(width: 15),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'Angga Nugraha Putra S.Kom',
+                          style: pw.TextStyle(
+                            fontSize: 22,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blue800,
                           ),
-                          pw.SizedBox(height: 4),
-                          pw.Text(
-                            'Full Stack Developer\n'
-                            'Yogyakarta, Indonesia\n'
-                            'anggagant@gmail.com | +62 812-5311-0040\n'
-                            'LinkedIn: linkedin.com/in/angga-nugraha-putra\n'
-                            'GitHub: github.com/Windstrom5',
-                            style: pw.TextStyle(
-                              fontSize: 9,
-                              color: PdfColors.grey800,
-                              height: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Full Stack Developer\n'
+                          'Yogyakarta, Indonesia\n'
+                          'anggagant@gmail.com | +62 812-5311-0040\n'
+                          'LinkedIn: linkedin.com/in/angga-nugraha-putra\n'
+                          'GitHub: github.com/Windstrom5',
+                          style: pw.TextStyle(fontSize: 9, color: PdfColors.grey800, height: 1.2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                pw.SizedBox(height: 15),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 15),
 
-                _sectionTitle('Personal Details', fontSize: 14),
-                _personalDetailsTable(fontSize: 9),
-                pw.SizedBox(height: 12),
+              _sectionTitle('Personal Details', fontSize: 14),
+              _personalDetailsTable(fontSize: 9),
+              pw.SizedBox(height: 12),
 
-                _sectionTitle('Profile', fontSize: 14),
-                pw.Text(
-                    'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development. ',
-                  style: pw.TextStyle(fontSize: 9),
-                ),
-                pw.SizedBox(height: 12),
+              _sectionTitle('Profile', fontSize: 14),
+              pw.Text(
+                'Enthusiastic and detail-oriented Full Stack Developer with strong foundations in modern web and mobile development.',
+                style: pw.TextStyle(fontSize: 9),
+              ),
+              pw.SizedBox(height: 12),
 
-                _sectionTitle('Skills', fontSize: 14),
-                _skillsWrap([
-                  'Vue.js',
-                  'Kotlin',
-                  'Laravel',
-                  'Java',
-                  'PostgreSQL',
-                  'MySQL',
-                  'Android Studio',
-                  'VS Code',
-                  'CodeIgniter',
-                  'Premiere Pro',
-                  'Photoshop',
-                  'NetBeans IDE',
-                ]),
-                pw.SizedBox(height: 12),
+              _sectionTitle('Skills', fontSize: 14),
+              _skillsWrap([
+                'Vue.js', 'Kotlin', 'Laravel', 'Java', 'PostgreSQL', 'MySQL',
+                'Android Studio', 'VS Code', 'CodeIgniter', 'Premiere Pro',
+                'Photoshop', 'NetBeans IDE',
+              ]),
+              pw.SizedBox(height: 12),
 
-                pw.Row(
+              // Two columns
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // Left column
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle('Professional Experience', fontSize: 14),
+                        _jobItem(
+                          title:
+                              'Software Programmer - PT. Kilang Pertamina Internasional RU VII Kasim',
+                          duration: 'Sep 2023 - Jan 2024',
+                          points: [
+                            'Developed mobile overtime tracking app with Kotlin.',
+                            'Backend with Laravel + PostgreSQL.',
+                            'Collaborated with HR and IT teams.',
+                          ],
+                          fontSize: 9,
+                        ),
+                        pw.SizedBox(height: 8),
+                        _jobItem(
+                          title: 'Volunteer Instructor - SDN Sendangsari (KKN Program)',
+                          duration: 'July 2023',
+                          points: [
+                            'Trained students in Word/Excel.',
+                            'Designed tailored learning materials.',
+                            'Supported computer literacy.',
+                          ],
+                          fontSize: 9,
+                        ),
+                        pw.SizedBox(height: 12),
+                        _sectionTitle('Education', fontSize: 14),
+                        pw.Text(
+                          'Bachelor of Computer Science - Universitas Atma Jaya Yogyakarta (2020 - 2025)\n'
+                          'GPA: 3.52 / 4.00\n\n'
+                          'SMAN 8 Samarinda (2016 - 2020)',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Divider
+                  pw.Container(
+                    width: 1,
+                    height: 400,
+                    margin: const pw.EdgeInsets.symmetric(horizontal: 10),
+                    color: PdfColors.grey400,
+                  ),
+
+                  // Right column
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle('Professional Summary & Highlights', fontSize: 14),
+                        pw.Text(
+                          'Driven developer with a strong commitment to delivering clean, maintainable, and scalable code. Proven track record in end-to-end project delivery across web and mobile platforms.',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.SizedBox(height: 6),
+                        pw.Bullet(
+                          text: 'Specializes in Kotlin and Laravel for high-performance applications.',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.Bullet(
+                          text: 'Skilled at integrating front-end and back-end systems seamlessly.',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.Bullet(
+                          text: 'Passionate about mentoring and knowledge sharing.',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.Bullet(
+                          text: 'Adaptable to emerging technologies and agile workflows.',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.SizedBox(height: 12),
+
+                        _sectionTitle('Certificates', fontSize: 14),
+                        pw.Bullet(
+                          text: 'Researcher Management and Leadership Training, 2024',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.Bullet(
+                          text: 'EnglishScore, 2025',
+                          style: pw.TextStyle(fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ========== PAGE 2 (Professional layout) ==========
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(14),
+        build: (context) {
+          return pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // LEFT — Finished Projects
+              pw.Expanded(
+                child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          _sectionTitle('Professional Experience',
-                              fontSize: 14),
-                          _jobItem(
-                            title:
-                                'Software Programmer - PT. Kilang Pertamina Internasional RU VII Kasim',
-                            duration: 'Sep 2023 - Jan 2024',
-                            points: [
-                              'Developed mobile overtime tracking app with Kotlin.',
-                              'Backend with Laravel + PostgreSQL.',
-                              'Collaborated with HR and IT teams.',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 8),
-                          _jobItem(
-                            title:
-                                'Volunteer Instructor - SDN Sendangsari (KKN Program)',
-                            duration: 'July 2023',
-                            points: [
-                              'Trained students in Word/Excel.',
-                              'Designed tailored learning materials.',
-                              'Supported computer literacy.',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 12),
-                          _sectionTitle('Education', fontSize: 14),
-                          pw.Text(
-                            'Bachelor of Computer Science - Universitas Atma Jaya Yogyakarta (2020 - 2025)\nGPA: 3.52 / 4.00\n\nSMAN 8 Samarinda (2016 - 2020)',
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
-                          pw.SizedBox(height: 12),
-                          _sectionTitle('Certificates', fontSize: 14),
-                          pw.Bullet(
-                              text:
-                                  'Researcher Management and Leadership Training, 2024',
-                              style: pw.TextStyle(fontSize: 9)),
-                          pw.Bullet(
-                              text: 'EnglishScore, 2025',
-                              style: pw.TextStyle(fontSize: 9)),
-                        ],
-                      ),
+                    _sectionHeaderPro('Finished Projects'),
+                    _projectCard(
+                      title: 'Diet Gamifikasi Android App',
+                      year: '2025',
+                      tags: ['Kotlin', 'Laravel', 'PostgreSQL'],
+                      bullets: [
+                        'Gamified fitness & diet tracker with streaks and challenges.',
+                        'Authentication & API with Laravel; secure data flows.',
+                        'Normalized PostgreSQL schema for analytics-friendly queries.',
+                      ],
                     ),
-                    pw.Container(
-                      width: 1,
-                      height: 400,
-                      margin: pw.EdgeInsets.symmetric(horizontal: 10),
-                      color: PdfColors.grey400,
+                    _projectCard(
+                      title: 'Personal Portfolio Website',
+                      year: '2025',
+                      tags: ['Flutter Web', 'Animations', 'PDF Export'],
+                      bullets: [
+                        'Responsive multi-page portfolio with micro-interactions.',
+                        'Built-in resume exporter to PDF using custom templates.',
+                        'Modular content blocks for quick updates.',
+                      ],
                     ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          _sectionTitle('Projects', fontSize: 14),
-                          _jobItem(
-                            title: 'Diet Gamifikasi Android App',
-                            duration: '2025',
-                            points: [
-                              'Gamified fitness & diet tracker in Kotlin.',
-                              'Use Laravel for backend/auth.',
-                              'Use Postgree As Server.',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 8),
-                          _jobItem(
-                            title: 'Personal Portfolio Website',
-                            duration: '2025',
-                            points: [
-                              'Built with Flutter Web.',
-                              'Animated UI with resume PDF export.',
-                              'Includes project & education showcase.',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 8),
-                          _jobItem(
-                            title: 'Workhubs',
-                            duration: '2024',
-                            points: [
-                              'Android app to track employee activities and manage company data.',
-                              'Supports QR-based attendance system for daily presence.',
-                              'Includes overtime and official duty logging features.',
-                              'Enables company and employee data management in one platform.',
-                              'Built with Kotlin (Android) and Laravel + PostgreSQL (Backend).',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 8),
-                          _jobItem(
-                            title: 'Go-Fit Android App',
-                            duration: '2023 - 2024',
-                            points: [
-                              'Gym operational management app for instructors and member.',
-                              'Tracks daily gym activities and attendance.',
-                              'Supports multiple instructors and class management.',
-                              'Built with Kotlin (Android) and Laravel + Vue.Js (Web Version).',
-                            ],
-                            fontSize: 9,
-                          ),
-                          pw.SizedBox(height: 8),
-                          pw.UrlLink(
-                            destination: 'https://github.com/Windstrom5',
-                            child: pw.Text('See more on GitHub',
-                                style: pw.TextStyle(
-                                    fontSize: 9,
-                                    color: PdfColors.blue,
-                                    decoration: pw.TextDecoration.underline)),
-                          ),
-                          pw.SizedBox(height: 12),
-                        ],
+                    _projectCard(
+                      title: 'Workhubs',
+                      year: '2024',
+                      tags: ['Android', 'QR Attendance', 'Kotlin', 'Laravel'],
+                      bullets: [
+                        'Employee activity tracking and daily attendance via QR.',
+                        'Overtime & official duty logging with approvals.',
+                        'REST backend (Laravel) with PostgreSQL; role-based access.',
+                      ],
+                    ),
+                    _projectCard(
+                      title: 'Go-Fit Android App',
+                      year: '2023 - 2024',
+                      tags: ['Kotlin', 'Laravel', 'Vue.js'],
+                      bullets: [
+                        'Gym operations suite for members and instructors.',
+                        'Schedule/class management with attendance tracking.',
+                        'Web admin built with Vue.js for multi-instructor setups.',
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.UrlLink(
+                      destination: 'https://github.com/Windstrom5',
+                      child: pw.Text(
+                        'See more on GitHub',
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.blue,
+                          decoration: pw.TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              // Divider
+              pw.Container(
+                width: 1,
+                height: 800,
+                margin: const pw.EdgeInsets.symmetric(horizontal: 10),
+                color: PdfColors.grey400,
+              ),
+              // RIGHT — Work In Progress
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _sectionHeaderPro('Work In Progress'),
+                    _projectCard(
+                      title: 'Karaoke App',
+                      year: '2025 (WIP)',
+                      tags: ['Ktor', 'Compose Multiplatform', 'AI', 'Python', 'Demucs', 'Whisper'],
+                      bullets: [
+                        'Real-time vocal/instrument separation via Python backend (Demucs, MoviePy, Torch).',
+                        'AI-powered automatic lyrics generation with Whisper, transliteration, and translation tools.',
+                        'Seamless multiplatform experience across devices.',
+                      ],
+                    ),
+                  _projectCard(
+                      title: 'The Dungeon Quest',
+                      year: '2025 (WIP)',
+                      tags: ['UE5', 'Roguelike', 'RNG Training'],
+                      bullets: [
+                        'Tile & dice-based gameplay inspired by D&D mechanics.',
+                        'RNG-driven training progression.',
+                        'Built in Unreal Engine 5 with data-driven content.',
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -233,6 +299,7 @@ class ResumePdf {
     return pdf.save();
   }
 
+  // ===== Helpers =====
   pw.Widget _sectionTitle(String title, {double fontSize = 20}) {
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 6),
@@ -249,6 +316,108 @@ class ResumePdf {
     );
   }
 
+  pw.Widget _sectionHeaderPro(String title) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 10),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              letterSpacing: .6,
+              color: PdfColors.blue800,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Container(height: 1, color: PdfColors.grey400),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _projectCard({
+    required String title,
+    required String year,
+    required List<String> bullets,
+    List<String>? tags,
+  }) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 10),
+      padding: const pw.EdgeInsets.fromLTRB(10, 8, 10, 8),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        border: pw.Border.all(color: PdfColors.grey300, width: 1),
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          // Title + year
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Expanded(
+                child: pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.black,
+                  ),
+                ),
+              ),
+              pw.Text(
+                year,
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey700,
+                  fontStyle: pw.FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          if (tags != null && tags.isNotEmpty) ...[
+            pw.SizedBox(height: 6),
+            _chipRow(tags),
+          ],
+          pw.SizedBox(height: 6),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: bullets
+                .map((b) => pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 2),
+                      child: pw.Bullet(text: b, style: pw.TextStyle(fontSize: 9, height: 1.2)),
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _chipRow(List<String> tags) {
+    return pw.Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: tags
+          .map((t) => pw.Container(
+                padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                  borderRadius: pw.BorderRadius.circular(10),
+                ),
+                child: pw.Text(
+                  t,
+                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey800),
+                ),
+              ))
+          .toList(),
+    );
+  }
+
   pw.Widget _personalDetailsTable({double fontSize = 12}) {
     return pw.Table(
       columnWidths: {
@@ -260,8 +429,7 @@ class ResumePdf {
         _tableRow('Date of Birth', 'November 20, 2002', fontSize),
         _tableRow('Address', 'Sleman, Yogyakarta', fontSize),
         _tableRow('Nationality', 'Indonesian', fontSize),
-        _tableRow('Languages', 'English (Fluent), Bahasa Indonesia (Native)',
-            fontSize),
+        _tableRow('Languages', 'English (Fluent), Bahasa Indonesia (Native)', fontSize),
       ],
     );
   }
@@ -273,9 +441,10 @@ class ResumePdf {
         child: pw.Text(
           label,
           style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue800,
-              fontSize: fontSize),
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.blue800,
+            fontSize: fontSize,
+          ),
         ),
       ),
       pw.Padding(
@@ -289,23 +458,25 @@ class ResumePdf {
     return pw.Wrap(
       spacing: 6,
       runSpacing: 4,
-      children: skills.map((skill) {
-        return pw.Container(
-          padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-          decoration: pw.BoxDecoration(
-            color: PdfColors.blue800,
-            borderRadius: pw.BorderRadius.circular(12),
-          ),
-          child: pw.Text(
-            skill,
-            style: pw.TextStyle(
-              color: PdfColors.white,
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
+      children: skills
+          .map(
+            (skill) => pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.blue800,
+                borderRadius: pw.BorderRadius.circular(12),
+              ),
+              child: pw.Text(
+                skill,
+                style: pw.TextStyle(
+                  color: PdfColors.white,
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          )
+          .toList(),
     );
   }
 
@@ -337,10 +508,8 @@ class ResumePdf {
         pw.SizedBox(height: 4),
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: points
-              .map((p) =>
-                  pw.Bullet(text: p, style: pw.TextStyle(fontSize: fontSize)))
-              .toList(),
+          children:
+              points.map((p) => pw.Bullet(text: p, style: pw.TextStyle(fontSize: fontSize))).toList(),
         ),
       ],
     );
