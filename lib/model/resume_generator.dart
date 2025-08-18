@@ -278,7 +278,7 @@ class ResumePdf {
                       ],
                     ),
                   _projectCard(
-                      title: 'The Dungeon Quest',
+                      title: 'Fatebound Quest',
                       year: '2025 (WIP)',
                       tags: ['UE5', 'Roguelike', 'RNG Training'],
                       bullets: [
