@@ -199,46 +199,62 @@ class ResumePdf {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     _sectionHeaderPro('Finished Projects'),
-                    _projectCard(
-                      title: 'Diet Gamifikasi Android App',
-                      year: '2025',
-                      tags: ['Kotlin', 'Laravel', 'PostgreSQL'],
-                      bullets: [
-                        'Gamified fitness & diet tracker with streaks and challenges.',
-                        'Authentication & API with Laravel; secure data flows.',
-                        'Normalized PostgreSQL schema for analytics-friendly queries.',
-                      ],
+                    pw.UrlLink(
+                      destination: 'https://github.com/Windstrom5/Diet_Gamification',
+                      child: _projectCard(
+                        title: 'Diet Gamifikasi Android App',
+                        year: '2025',
+                        tags: ['Kotlin', 'Laravel', 'PostgreSQL'],
+                        bullets: [
+                          'Gamified fitness & diet tracker with streaks and challenges.',
+                          'Authentication & API with Laravel; secure data flows.',
+                          'Normalized PostgreSQL schema for analytics-friendly queries.',
+                        ],
+                      ),
                     ),
-                    _projectCard(
-                      title: 'Personal Portfolio Website',
-                      year: '2025',
-                      tags: ['Flutter Web', 'Animations', 'PDF Export'],
-                      bullets: [
-                        'Responsive multi-page portfolio with micro-interactions.',
-                        'Built-in resume exporter to PDF using custom templates.',
-                        'Modular content blocks for quick updates.',
-                      ],
+
+                    pw.UrlLink(
+                      destination: 'https://github.com/Windstrom5/portofolio',
+                      child: _projectCard(
+                        title: 'Personal Portfolio Website',
+                        year: '2025',
+                        tags: ['Flutter Web', 'Animations', 'PDF Export'],
+                        bullets: [
+                          'Responsive multi-page portfolio with micro-interactions.',
+                          'Built-in resume exporter to PDF using custom templates.',
+                          'Modular content blocks for quick updates.',
+                        ],
+                      ),
                     ),
-                    _projectCard(
-                      title: 'Workhubs',
-                      year: '2024',
-                      tags: ['Android', 'QR Attendance', 'Kotlin', 'Laravel'],
-                      bullets: [
-                        'Employee activity tracking and daily attendance via QR.',
-                        'Overtime & official duty logging with approvals.',
-                        'REST backend (Laravel) with PostgreSQL; role-based access.',
-                      ],
+
+                    pw.UrlLink(
+                      destination: 'https://github.com/Windstrom5/WorkHubs',
+                      child: _projectCard(
+                        title: 'Workhubs',
+                        year: '2024',
+                        tags: ['Android', 'QR Attendance', 'Kotlin', 'Laravel'],
+                        bullets: [
+                          'Employee activity tracking and daily attendance via QR.',
+                          'Overtime & official duty logging with approvals.',
+                          'REST backend (Laravel) with PostgreSQL; role-based access.',
+                        ],
+                      ),
                     ),
-                    _projectCard(
-                      title: 'Go-Fit Android App',
-                      year: '2023 - 2024',
-                      tags: ['Kotlin', 'Laravel', 'Vue.js'],
-                      bullets: [
-                        'Gym operations suite for members and instructors.',
-                        'Schedule/class management with attendance tracking.',
-                        'Web admin built with Vue.js for multi-instructor setups.',
-                      ],
+
+                    pw.UrlLink(
+                      destination: 'https://github.com/Windstrom5/Go-Fit-android',
+                      child: _projectCard(
+                        title: 'Go-Fit Android App',
+                        year: '2023 - 2024',
+                        tags: ['Kotlin', 'Laravel', 'Vue.js'],
+                        bullets: [
+                          'Gym operations suite for members and instructors.',
+                          'Schedule/class management with attendance tracking.',
+                          'Web admin built with Vue.js for multi-instructor setups.',
+                        ],
+                      ),
                     ),
+
                     pw.SizedBox(height: 8),
                     pw.UrlLink(
                       destination: 'https://github.com/Windstrom5',
