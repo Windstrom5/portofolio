@@ -13,20 +13,26 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:project_test/llm/llm_service.dart';
+import 'package:project_test/widget/ai_chat_panel.dart';
+import 'package:project_test/widget/Loader_Gate.dart';
+import '../model/chat_message.dart';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: Size(1440, 900), // Design size for web browsers
-      builder: (context, child) {
-        return MaterialApp(
+      designSize: const Size(1440, 900),
+      builder: (_, __) {
+        return const MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: HomePage(),
+          home: LoaderGate(),
         );
       },
     );
@@ -41,7 +47,58 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<ChatMessage> chatHistory = []; // Persistent chat history
+
   int _selectedIndex = 0;
+  int _aiProgress = 0;
+  bool _aiReady = false;
+  @override
+  void initState() {
+    super.initState();
+    _aiReady = true;
+  }
+
+  void openAiChat() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // clicking outside does nothing
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: SizedBox(
+            width: 700,
+            height: 500,
+            child: Stack(
+              children: [
+                AiChatPanel(chatHistory: chatHistory), // Pass history
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey.shade800,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
@@ -430,8 +487,7 @@ class _HomePageState extends State<HomePage> {
                     imagePath: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
                   ),
                   CertificateCard(
-                    certificateName:
-                        "English Score",
+                    certificateName: "English Score",
                     organizationName: "British Council",
                     imagePath: "assets/EnglishScore.jpg",
                   ),
@@ -495,6 +551,58 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.chat),
+        label: const Text("Chat Me"),
+        backgroundColor: _aiReady ? Colors.blue : Colors.grey,
+        onPressed: !_aiReady
+            ? null
+            : () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false, // Clicking outside won't close
+                  builder: (_) => Dialog(
+                    backgroundColor:
+                        Colors.transparent, // So rounded corners show nicely
+                    insetPadding: const EdgeInsets.all(20),
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(20), // Rounded corners
+                      child: Container(
+                        width: 700,
+                        height: 500,
+                        color: const Color(0xFF0F0F18), // Dialog background
+                        child: Stack(
+                          children: [
+                            AiChatPanel(
+                                chatHistory: chatHistory), // Pass the list here
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: GestureDetector(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+      ),
       body: Container(
         width: double.infinity,
         height: MediaQuery.of(context).size.height, // Fixed height
