@@ -6,7 +6,7 @@ import 'package:project_test/model/Education_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'model/ProjectGrid.dart';
 import 'model/resume_generator.dart';
-import 'model/certificate_card.dart'; // Importing the CertificateCard class
+import 'model/certificate_card.dart'; 
 import 'package:dev_icons/dev_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pdf/pdf.dart';

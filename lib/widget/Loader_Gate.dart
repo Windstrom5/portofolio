@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../llm/llm_service.dart';
-import '../introLoader.dart';
+import 'package:project_test/introLoader.dart';
 import '../main.dart';
 
 class LoaderGate extends StatefulWidget {
