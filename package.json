@@ -14,6 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.80"
+    "@mlc-ai/web-llm": "^0.2.80",
+    "@pixiv/three-vrm": "^3.4.5",
+    "three": "^0.182.0"
   }
 }

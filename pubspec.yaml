@@ -116,8 +116,8 @@ flutter:
     - assets/atma.jpg
     - assets/bg.jpg
     - assets/bang dream.gif
-    - assets/myself.jpg
     - assets/EnglishScore.jpg
+    - assets/profile.jpg
   fonts:
     - family: Retro
       fonts:

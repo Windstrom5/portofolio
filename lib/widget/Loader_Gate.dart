@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../llm/llm_service.dart';
 import 'package:project_test/IntroLoader.dart';
 import '../main.dart';
+import 'dart:async';
 
 class LoaderGate extends StatefulWidget {
   const LoaderGate({super.key});
@@ -11,20 +12,14 @@ class LoaderGate extends StatefulWidget {
 }
 
 class _LoaderGateState extends State<LoaderGate> {
-  int progress = 0;
   bool ready = false;
 
   @override
   void initState() {
     super.initState();
-
-    LlmService.init((p) {
-      setState(() => progress = p);
-      if (p == 100) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          setState(() => ready = true);
-        });
-      }
+    // Simulate boot time without LLM loading
+    Future.delayed(const Duration(seconds: 4), () { // Adjust based on boot messages timing
+      setState(() => ready = true);
     });
   }
 
@@ -37,9 +32,8 @@ class _LoaderGateState extends State<LoaderGate> {
         switchOutCurve: Curves.easeInCubic,
         child: ready
             ? const HomePage(key: ValueKey("home"))
-            : IntroLoader(
-                key: const ValueKey("loader"),
-                progress: progress,
+            : const IntroLoader(
+                key: ValueKey("loader"),
               ),
       ),
     );

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 import '../llm/llm_service.dart';
 import '../model/chat_message.dart';
 import 'chat_bubble.dart';
@@ -23,6 +26,18 @@ class _AiChatPanelState extends State<AiChatPanel> {
   void initState() {
     super.initState();
     messages = widget.chatHistory; // Use parent history
+    if (messages.isEmpty) {
+      _addInitialMessage();
+    }
+  }
+
+  Future<void> _addInitialMessage() async {
+    const initialText = "H-Huh? Master? You're finally here! I've been waiting!";
+    setState(() {
+      messages.add(ChatMessage(text: initialText, role: MessageRole.assistant));
+    });
+    _postMessageToVrm('speak', initialText);
+    _scrollToBottom();
   }
 
   Future<void> sendMessage() async {
@@ -35,22 +50,38 @@ class _AiChatPanelState extends State<AiChatPanel> {
       messages.add(ChatMessage(text: text, role: MessageRole.user));
       isTyping = true;
     });
+    _scrollToBottom();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
+    try {
+      final reply = await LlmService.ask(text);
+      setState(() {
+        isTyping = false;
+        messages.add(ChatMessage(text: reply, role: MessageRole.assistant));
+      });
+      _postMessageToVrm('speak', reply);
+    } catch (e) {
+      setState(() {
+        isTyping = false;
+        messages.add(ChatMessage(text: "Error: $e", role: MessageRole.assistant));
+      });
+    }
+    _scrollToBottom();
+  }
 
-    final reply = await LlmService.ask(text);
+  void _postMessageToVrm(String type, String text) {
+    if (kIsWeb) {
+      try {
+        var iframe = js.context['document'].callMethod('querySelector', ['iframe[src="vrm/index.html"]']);
+        if (iframe != null) {
+          js_util.callMethod(iframe['contentWindow'], 'postMessage', [js_util.jsify({'type': type, 'text': text}), '*']);
+        }
+      } catch (e) {
+        // Handle error silently or log
+      }
+    }
+  }
 
-    setState(() {
-      isTyping = false;
-      messages.add(ChatMessage(text: reply, role: MessageRole.assistant));
-    });
-
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,

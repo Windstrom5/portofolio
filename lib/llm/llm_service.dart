@@ -28,7 +28,7 @@ class LlmService {
   }
 
   static Future<String> ask(String prompt) async {
-    await init(null); // auto-init safety
+    await init(null); // auto-init safety, but progress won't show unless provided
 
     final res = await js.promiseToFuture(
       js.callMethod(js.globalThis, 'askLLM', [prompt]),
