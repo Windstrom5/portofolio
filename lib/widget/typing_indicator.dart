@@ -4,7 +4,8 @@ class FuturisticTypingIndicator extends StatefulWidget {
   const FuturisticTypingIndicator({super.key});
 
   @override
-  State<FuturisticTypingIndicator> createState() => _FuturisticTypingIndicatorState();
+  State<FuturisticTypingIndicator> createState() =>
+      _FuturisticTypingIndicatorState();
 }
 
 class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
@@ -24,15 +25,21 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
     )..repeat();
 
     _dotOneAnim = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.4, curve: Curves.easeInOut)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.0, 0.4, curve: Curves.easeInOut)),
     );
 
     _dotTwoAnim = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.6, curve: Curves.easeInOut)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.2, 0.6, curve: Curves.easeInOut)),
     );
 
     _dotThreeAnim = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.4, 0.8, curve: Curves.easeInOut)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.4, 0.8, curve: Curves.easeInOut)),
     );
   }
 
@@ -46,15 +53,15 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
     return ScaleTransition(
       scale: anim,
       child: Container(
-        width: 10,
-        height: 10,
-        margin: const EdgeInsets.symmetric(horizontal: 3),
+        width: 8,
+        height: 8,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
-          color: Colors.cyanAccent,
+          color: const Color(0xFFFF6B9D),
           boxShadow: [
             BoxShadow(
-              color: Colors.cyanAccent.withOpacity(0.7),
-              blurRadius: 8,
+              color: const Color(0xFFFF6B9D).withOpacity(0.6),
+              blurRadius: 6,
               spreadRadius: 1,
             )
           ],
@@ -66,45 +73,118 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0F0F18), Color(0xFF1A1A2E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.cyanAccent.withOpacity(0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.cyanAccent.withOpacity(0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDot(_dotOneAnim),
-            _buildDot(_dotTwoAnim),
-            _buildDot(_dotThreeAnim),
-            const SizedBox(width: 12),
-            const Text(
-              "Thinking…",
-              style: TextStyle(
-                color: Colors.cyanAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sakura avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF6B9D), Color(0xFFFF8E9E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF6B9D).withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                '🌸',
+                style: TextStyle(fontSize: 20),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+
+          // Typing indicator column
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sakura label
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.favorite,
+                      size: 12,
+                      color: Color(0xFFFF6B9D),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Sakura',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFFF6B9D),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Typing bubble
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2D2D3A), Color(0xFF1E1E2E)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(4),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  border: Border.all(
+                    color: const Color(0xFFFF6B9D).withOpacity(0.3),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF6B9D).withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildDot(_dotOneAnim),
+                    _buildDot(_dotTwoAnim),
+                    _buildDot(_dotThreeAnim),
+                    const SizedBox(width: 10),
+                    const Text(
+                      "typing…",
+                      style: TextStyle(
+                        color: Color(0xFFFF6B9D),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

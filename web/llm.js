@@ -105,7 +105,7 @@ globalThis.startListening = () => {
   listening = true;
 
   // Let browser auto-detect speech language
-  recognition.lang = ""; 
+  recognition.lang = "";
   recognition.start();
 };
 
@@ -154,6 +154,28 @@ globalThis.initLLM = async (resumeContext) => {
 // =======================
 // 💬 ASK SAKURA
 // =======================
+
+// Parse bilingual response format: [JP]: ... [EN]: ...
+function parseBilingualResponse(text) {
+  const jpMatch = text.match(/\[JP\]:\s*(.+?)(?=\[EN\]:|$)/s);
+  const enMatch = text.match(/\[EN\]:\s*(.+?)$/s);
+
+  if (jpMatch && enMatch) {
+    return {
+      japanese: jpMatch[1].trim(),
+      english: enMatch[1].trim(),
+      raw: text
+    };
+  }
+
+  // Fallback: if no tags found, use the whole text for both
+  return {
+    japanese: text,
+    english: text,
+    raw: text
+  };
+}
+
 globalThis.askLLM = async (prompt, options = {}) => {
   if (!engine) throw new Error("LLM not ready");
 
@@ -163,9 +185,9 @@ globalThis.askLLM = async (prompt, options = {}) => {
   // (Optional) hint model by prepending language intent
   let finalPrompt = prompt;
   if (detectedLang === "id") {
-    finalPrompt = "Jawab dalam Bahasa Indonesia:\n" + prompt;
+    finalPrompt = "User is speaking Indonesian. Remember to respond with [JP] and [EN] tags:\\n" + prompt;
   } else if (detectedLang === "en") {
-    finalPrompt = "Answer in English:\n" + prompt;
+    finalPrompt = "User is speaking English. Remember to respond with [JP] and [EN] tags:\\n" + prompt;
   }
   // Japanese → no hint needed
 
@@ -179,13 +201,28 @@ globalThis.askLLM = async (prompt, options = {}) => {
   });
 
   const reply = res.choices[0].message.content;
-
   messages.push({ role: "assistant", content: reply });
+
+  // Parse the bilingual response
+  const parsed = parseBilingualResponse(reply);
 
   // 🔊 ALWAYS SPEAK IN JAPANESE MAID VOICE
   if (options.speak !== false) {
-    speak(reply, options.emotion ?? "neutral");
+    speak(parsed.japanese, options.emotion ?? "neutral");
   }
 
-  return reply;
+  // Return the English text for chat display, but also include a way to get full data
+  // We'll send the structured data via a custom event for the VRM
+  if (typeof window !== 'undefined') {
+    // Dispatch event with bilingual data for VRM iframe
+    window.postMessage({
+      type: 'bilingual_response',
+      japanese: parsed.japanese,
+      english: parsed.english
+    }, '*');
+  }
+
+  // Return English for the Flutter chat display
+  return parsed.english;
 };
+

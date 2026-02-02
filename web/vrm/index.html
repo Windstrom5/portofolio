@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Sakura VN - Manga Style</title>
 
-    <script type="importmap">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sakura VN - Manga Style</title>
+
+  <script type="importmap">
       {
         "imports": {
           "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
@@ -13,251 +14,441 @@
       }
     </script>
 
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: transparent;
-        font-family: "Segoe UI", sans-serif;
-      }
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: transparent;
+      font-family: "Segoe UI", sans-serif;
+    }
 
-      /* === MANGA BUBBLE FIX === */
-      #bubble-container {
-        position: absolute;
-        bottom: 20px; /* Positioned at bottom for VN style */
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 20;
-        width: 85%;
-        max-width: 350px;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-      }
+    /* === MANGA BUBBLE FIX === */
+    #bubble-container {
+      position: absolute;
+      bottom: 20px;
+      /* Positioned at bottom for VN style */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      width: 85%;
+      max-width: 350px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
 
-      #speech-bubble {
-        background: white;
-        border: 4px solid black;
-        border-radius: 20px;
-        padding: 15px;
-        color: black;
-        font-weight: 800;
-        position: relative;
-        box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.2);
-        font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
-        font-size: 0.95rem;
-        line-height: 1.3;
-        text-align: center;
-        
-        /* FIX: Even shorter max-height and scrolling */
-        max-height: 160px; 
-        overflow-y: auto;
-        display: block;
-      }
+    #speech-bubble {
+      background: white;
+      border: 4px solid black;
+      border-radius: 20px;
+      padding: 15px;
+      color: black;
+      font-weight: 800;
+      position: relative;
+      box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.2);
+      font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      text-align: center;
 
-      /* Hide scrollbar but keep functionality */
-      #speech-bubble::-webkit-scrollbar { width: 0px; }
+      /* FIX: Even shorter max-height and scrolling */
+      max-height: 160px;
+      overflow-y: auto;
+      display: block;
+    }
 
-      /* === THE "ARROW" (TAIL) FIX === */
-      #speech-bubble::after {
-        content: "";
-        position: absolute;
-        top: -18px; /* Flipped to top for pointing up */
-        left: 50%;
-        transform: translateX(-50%) rotate(180deg); /* Rotate to point up */
-        border-width: 18px 15px 0;
-        border-style: solid;
-        border-color: white transparent;
-        z-index: 2;
-      }
+    /* Hide scrollbar but keep functionality */
+    #speech-bubble::-webkit-scrollbar {
+      width: 0px;
+    }
 
-      #speech-bubble::before {
-        content: "";
-        position: absolute;
-        top: -25px; /* Flipped to top */
-        left: 50%;
-        transform: translateX(-50%) rotate(180deg); /* Rotate to point up */
-        border-width: 22px 18px 0;
-        border-style: solid;
-        border-color: black transparent;
-        z-index: 1;
-      }
-    </style>
-  </head>
+    /* === THE "ARROW" (TAIL) FIX === */
+    #speech-bubble::after {
+      content: "";
+      position: absolute;
+      top: -18px;
+      /* Flipped to top for pointing up */
+      left: 50%;
+      transform: translateX(-50%) rotate(180deg);
+      /* Rotate to point up */
+      border-width: 18px 15px 0;
+      border-style: solid;
+      border-color: white transparent;
+      z-index: 2;
+    }
 
-  <body>
+    #speech-bubble::before {
+      content: "";
+      position: absolute;
+      top: -25px;
+      /* Flipped to top */
+      left: 50%;
+      transform: translateX(-50%) rotate(180deg);
+      /* Rotate to point up */
+      border-width: 22px 18px 0;
+      border-style: solid;
+      border-color: black transparent;
+      z-index: 1;
+    }
+  </style>
+</head>
 
-    <div id="bubble-container">
-      <div id="speech-bubble">
-        <span id="text-display">...</span>
+<body>
+  <div id="loading-overlay" style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.4rem;
+        z-index: 9999;
+        transition: opacity 0.6s;
+      ">
+    <div style="text-align: center">
+      <div class="spinner" style="
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1.2s linear infinite;
+            margin: 0 auto 20px;
+          "></div>
+      <div>Loading Sakura (voice engine)...</div>
+      <div style="font-size: 0.9rem; margin-top: 12px; opacity: 0.8">
+        Japanese voice may take a few seconds...
       </div>
     </div>
+  </div>
+  <div id="bubble-container">
+    <div id="speech-bubble">
+      <span id="text-display">...</span>
+    </div>
+  </div>
 
-    <script type="module">
-      import * as THREE from "three";
-      import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-      import { VRMLoaderPlugin } from "https://unpkg.com/@pixiv/three-vrm@2.0.0/lib/three-vrm.module.js";
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+    import { VRMLoaderPlugin } from "https://unpkg.com/@pixiv/three-vrm@2.0.0/lib/three-vrm.module.js";
 
-      /* ===================== 3D SETUP ===================== */
-      let scene, camera, renderer, vrm;
-      let clock = new THREE.Clock();
-      let isSleeping = false;
+    /* ===================== 3D SETUP ===================== */
+    let scene, camera, renderer, vrm;
+    let clock = new THREE.Clock();
+    let isSleeping = false;
+    let voicesReady = false;
+    let hasJapaneseVoice = false;
+    window.speechSynthesis.onvoiceschanged = () => {
+      checkVoices();
+    };
+    setTimeout(checkVoices, 300);
+    setTimeout(checkVoices, 1200);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(
+      30,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100,
+    );
+    camera.position.set(0.0, 1.4, 2.8);
 
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(
-        30,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        100
-      );
-      camera.position.set(0.0, 1.4, 2.8);
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
 
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
-      document.body.appendChild(renderer.domElement);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+    sun.position.set(1, 1, 1).normalize();
+    scene.add(sun);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-      const sun = new THREE.DirectionalLight(0xffffff, 0.6);
-      sun.position.set(1, 1, 1).normalize();
-      scene.add(sun);
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
+    loader.load("/models/aiko.vrm", (gltf) => {
+      vrm = gltf.userData.vrm;
+      scene.add(vrm.scene);
 
-      const loader = new GLTFLoader();
-      loader.register((parser) => new VRMLoaderPlugin(parser));
-      loader.load("/models/aiko.vrm", (gltf) => {
-        vrm = gltf.userData.vrm;
-        scene.add(vrm.scene);
+      // Initial Pose
+      const rb = (n, v) => {
+        const b = vrm.humanoid.getNormalizedBoneNode(n);
+        if (b) b.rotation.z = v;
+      };
+      rb("leftUpperArm", -1.3);
+      rb("rightUpperArm", 1.3);
+      rb("leftLowerArm", 0.3);
+      rb("rightLowerArm", -0.3);
 
-        // Initial Pose
-        const rb = (n, v) => {
-          const b = vrm.humanoid.getNormalizedBoneNode(n);
-          if (b) b.rotation.z = v;
-        };
-        rb("leftUpperArm", -1.3);
-        rb("rightUpperArm", 1.3);
-        rb("leftLowerArm", 0.3);
-        rb("rightLowerArm", -0.3);
+      const neck = vrm.humanoid.getNormalizedBoneNode("neck");
+      if (neck) neck.rotation.x = 0; // Awake
+    });
 
-        const neck = vrm.humanoid.getNormalizedBoneNode("neck");
-        if (neck) neck.rotation.x = 0; // Awake
-      });
+    /* ===================== VN STYLE TEXT & VOICE ===================== */
+    let typingInterval;
+    let hideTimeout;
+    let selectedVoice = null;
 
-      /* ===================== VN STYLE TEXT & VOICE ===================== */
-      let typingInterval;
-      let hideTimeout;
+    function checkVoices() {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0 && !voicesReady) {
+        voicesReady = true;
+        const jaVoices = voices.filter((v) => v.lang.startsWith("ja"));
+        hasJapaneseVoice = jaVoices.length > 0;
 
-      function speak(text) {
-        if (!text) return;
-        const cleanText = text.replace(/\*/g, '').replace(/#/g, '');
-        const container = document.getElementById("bubble-container");
-        const display = document.getElementById("text-display");
+        console.log(
+          "Voices loaded:",
+          voices.length,
+          "Japanese voices:",
+          jaVoices.length,
+        );
+        console.log(
+          "Available ja voices:",
+          jaVoices.map((v) => `${v.name} (${v.lang})`),
+        );
 
-        if (typingInterval) clearInterval(typingInterval);
-        if (hideTimeout) clearTimeout(hideTimeout);
+        // Pre-select the best voice
+        selectedVoice = selectBestVoice(voices);
+        console.log("Selected voice:", selectedVoice?.name || "default");
 
-        display.innerHTML = "";
-        container.style.opacity = "1";
+        // Hide loading when voices exist
+        hideLoading();
+      }
+    }
 
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
+    // Priority voice selection for more natural sound
+    function selectBestVoice(voices) {
+      const jaVoices = voices.filter((v) => v.lang === "ja-JP" || v.lang.startsWith("ja"));
 
-        // Set Language
-        utter.lang = "ja-JP";
+      // Priority order for natural-sounding voices
+      const priorityPatterns = [
+        /Microsoft.*Nanami/i,      // Edge Neural voice (very natural)
+        /Microsoft.*Haruka/i,      // Edge voice
+        /Google.*日本語/i,          // Google Japanese
+        /Google.*Japanese/i,       // Google Japanese alt
+        /Neural/i,                 // Any neural voice
+        /Natural/i,                // Any natural voice
+        /Premium/i,                // Premium voices
+        /Kyoko/i,                  // Apple Kyoko
+        /O-Ren/i,                  // Apple O-Ren
+        /Otoya/i,                  // Apple Otoya
+      ];
 
-        // Better Voice Selection
-        const voices = window.speechSynthesis.getVoices();
-        const animeVoice =
-          voices.find(
-            (v) =>
-              v.lang === "ja-JP" &&
-              (v.name.includes("Nanami") || v.name.includes("Natural"))
-          ) ||
-          voices.find((v) => v.lang === "ja-JP" && v.name.includes("Google")) ||
-          voices.find((v) => v.lang === "ja-JP");
-
-        if (animeVoice) utter.voice = animeVoice;
-
-        // Natural "Cute" parameters
-        utter.pitch = 1.35; // Higher pitch for a cheerful maid
-        utter.rate = 1.05; // Slightly faster than default for energy
-        utter.volume = 1.0;
-
-        window.speechSynthesis.speak(utter);
-
-        // 3. Progressive Typewriter Effect (VN Style)
-        let i = 0;
-        const typeSpeed = 40; // milliseconds per char
-
-        typingInterval = setInterval(() => {
-          if (i < cleanText.length) {
-            display.innerHTML += cleanText.charAt(i);
-            i++;
-            // Scroll to bottom as it types
-            document.getElementById("speech-bubble").scrollTop = document.getElementById("speech-bubble").scrollHeight;
-          } else {
-            clearInterval(typingInterval);
-            hideTimeout = setTimeout(() => {
-              container.style.opacity = "0";
-            }, 7000); 
-          }
-        }, 4000 / cleanText.length > 50 ? 30 : 4000 / cleanText.length);
+      for (const pattern of priorityPatterns) {
+        const match = jaVoices.find((v) => pattern.test(v.name));
+        if (match) return match;
       }
 
-      // Listen for postMessage from parent
-      window.addEventListener('message', (event) => {
-        if (event.data.type === 'speak') {
-          speak(event.data.text);
-        } else if (event.data.type === 'wake') {
-          isSleeping = false;
-          if (vrm) {
-            const neck = vrm.humanoid.getNormalizedBoneNode("neck");
-            if (neck) neck.rotation.x = 0;
-          }
-          speak("H-Huh? Master? You're finally here! I've been waiting!");
-        }
-      });
+      // Fallback to any Japanese voice
+      return jaVoices[0] || voices[0];
+    }
 
-      /* ===================== ANIMATION LOOP ===================== */
-      function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
+    function hideLoading() {
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay) {
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 600);
+      }
+    }
+
+    // Main speak function - now accepts both Japanese (for voice) and English (for display)
+    function speak(textOrData) {
+      let japaneseText, englishText;
+
+      // Handle both old format (string) and new format (object with jp/en)
+      if (typeof textOrData === 'object' && textOrData !== null) {
+        japaneseText = textOrData.japanese || textOrData.jp || textOrData.text || "";
+        englishText = textOrData.english || textOrData.en || japaneseText;
+      } else {
+        // Legacy: single text string - use for both
+        japaneseText = textOrData || "";
+        englishText = japaneseText;
+      }
+
+      if (!japaneseText) return;
+
+      const cleanJapanese = japaneseText.replace(/\*/g, "").replace(/#/g, "");
+      const cleanEnglish = englishText.replace(/\*/g, "").replace(/#/g, "");
+
+      const container = document.getElementById("bubble-container");
+      const display = document.getElementById("text-display");
+
+      if (typingInterval) clearInterval(typingInterval);
+      if (hideTimeout) clearTimeout(hideTimeout);
+
+      display.innerHTML = "";
+      container.style.opacity = "1";
+
+      window.speechSynthesis.cancel();
+      if (!voicesReady) {
+        display.innerHTML = "Loading voice engine... please wait ♡";
+        return;
+      }
+
+      const utter = new SpeechSynthesisUtterance(cleanJapanese);
+      utter.lang = "ja-JP";
+
+      // Use pre-selected best voice
+      if (selectedVoice) {
+        utter.voice = selectedVoice;
+      }
+
+      // More natural speech parameters (less robotic)
+      utter.pitch = 1.15;  // Slightly elevated but not too high
+      utter.rate = 0.95;   // Slightly slower for clarity
+      utter.volume = 1.0;
+
+      // Track speech progress for text sync
+      let speechStarted = false;
+      let charIndex = 0;
+
+      utter.onstart = () => {
+        speechStarted = true;
+        startSyncedTypewriter(cleanEnglish, utter);
+        // Notify parent that speech started
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'speechStart' }, '*');
+        }
+      };
+
+      utter.onend = () => {
+        // Ensure full text is displayed when speech ends
+        display.innerHTML = cleanEnglish;
+        document.getElementById("speech-bubble").scrollTop =
+          document.getElementById("speech-bubble").scrollHeight;
+
+        // Notify parent that speech ended
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'speechEnd' }, '*');
+        }
+
+        hideTimeout = setTimeout(() => {
+          container.style.opacity = "0";
+        }, 5000);
+      };
+
+      utter.onerror = (e) => {
+        console.warn("Speech error:", e);
+        // Fallback: show text anyway
+        display.innerHTML = cleanEnglish;
+        // Notify parent that speech ended (even on error)
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'speechEnd' }, '*');
+        }
+      };
+
+      window.speechSynthesis.speak(utter);
+
+      // Fallback if onstart doesn't fire (some browsers)
+      setTimeout(() => {
+        if (!speechStarted) {
+          startSyncedTypewriter(cleanEnglish, utter);
+        }
+      }, 100);
+    }
+
+    // Synced typewriter that matches speech duration
+    function startSyncedTypewriter(text, utterance) {
+      const container = document.getElementById("bubble-container");
+      const display = document.getElementById("text-display");
+
+      if (typingInterval) clearInterval(typingInterval);
+
+      // Estimate speech duration based on Japanese text length and rate
+      // Average Japanese speech: ~7-8 characters per second
+      const estimatedDuration = (utterance.text.length / 7) * 1000 / utterance.rate;
+      const intervalMs = Math.max(30, estimatedDuration / text.length);
+
+      let i = 0;
+      display.innerHTML = "";
+
+      typingInterval = setInterval(() => {
+        if (i < text.length) {
+          display.innerHTML += text.charAt(i);
+          i++;
+          document.getElementById("speech-bubble").scrollTop =
+            document.getElementById("speech-bubble").scrollHeight;
+        } else {
+          clearInterval(typingInterval);
+        }
+      }, intervalMs);
+    }
+
+    // Listen for postMessage from parent
+    window.addEventListener("message", (event) => {
+      if (event.data.type === "speak") {
+        if (voicesReady) {
+          // Handle bilingual format: {japanese, english} or legacy {text}
+          if (event.data.japanese && event.data.english) {
+            speak({
+              japanese: event.data.japanese,
+              english: event.data.english
+            });
+          } else {
+            // Legacy format or fallback
+            speak(event.data.text || event.data.japanese || event.data.english || "");
+          }
+        } else {
+          document.getElementById("text-display").innerHTML =
+            "Still loading Sakura's voice... ♡<br>" + (event.data.english || event.data.text || "");
+        }
+      } else if (event.data.type === "wake") {
+        isSleeping = false;
         if (vrm) {
-          const t = clock.elapsedTime;
+          const neck = vrm.humanoid.getNormalizedBoneNode("neck");
+          if (neck) neck.rotation.x = 0;
+        }
+        speak({
+          japanese: "あら？ご主人様？やっと来たのね！待ってたよ！",
+          english: "H-Huh? Master? You're finally here! I've been waiting!"
+        });
+      }
+    });
 
-          if (isSleeping) {
-            vrm.expressionManager.setValue("blink", 1.0);
-            vrm.expressionManager.setValue("aa", 0);
-            const sleepBreath = Math.sin(t * 1.5) * 0.1;
-            vrm.humanoid.getNormalizedBoneNode("spine").rotation.x =
-              sleepBreath;
+    /* ===================== ANIMATION LOOP ===================== */
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (vrm) {
+        const t = clock.elapsedTime;
+
+        if (isSleeping) {
+          vrm.expressionManager.setValue("blink", 1.0);
+          vrm.expressionManager.setValue("aa", 0);
+          const sleepBreath = Math.sin(t * 1.5) * 0.1;
+          vrm.humanoid.getNormalizedBoneNode("spine").rotation.x =
+            sleepBreath;
+        } else {
+          vrm.expressionManager.setValue(
+            "blink",
+            Math.sin(t * 0.5) > 0.98 ? 1 : 0,
+          );
+
+          if (window.speechSynthesis.speaking) {
+            const mouthOpen = Math.abs(Math.sin(t * 15)) * 0.6;
+            vrm.expressionManager.setValue("aa", mouthOpen);
           } else {
-            vrm.expressionManager.setValue(
-              "blink",
-              Math.sin(t * 0.5) > 0.98 ? 1 : 0
-            );
-
-            if (window.speechSynthesis.speaking) {
-              const mouthOpen = Math.abs(Math.sin(t * 15)) * 0.6;
-              vrm.expressionManager.setValue("aa", mouthOpen);
-            } else {
-              vrm.expressionManager.setValue("aa", 0);
-            }
-
-            const breath = Math.sin(t * 1) * 0.05;
-            vrm.humanoid.getNormalizedBoneNode("spine").rotation.x = breath;
+            vrm.expressionManager.setValue("aa", 0);
           }
 
-          vrm.update(delta);
+          const breath = Math.sin(t * 1) * 0.05;
+          vrm.humanoid.getNormalizedBoneNode("spine").rotation.x = breath;
         }
-        renderer.render(scene, camera);
+
+        vrm.update(delta);
       }
+      renderer.render(scene, camera);
+    }
 
-      animate();
+    animate();
 
-      window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    </script>
-  </body>
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    setTimeout(hideLoading, 8000);
+  </script>
+</body>
+
 </html>
