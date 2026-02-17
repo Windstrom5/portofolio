@@ -34,6 +34,16 @@ const String resumeContext = """
     - Android Development
     - Backend Systems
     - Software Architecture
+  - Education History:
+    - Universitas Atma Jaya Yogyakarta (Information Systems)
+    - SMA Negeri 8 Samarinda
+    - SMP Negeri 16 Samarinda
+    - SDN 001 Sungai Kunjang
+
+  - Professional Experience:
+    - Backend Programmer (Intern) at RSU Mitra Paramedika Yogyakarta (Developing SIMRS with Laravel)
+    - Software Programmer (Intern) at PT. Kilang Pertamina Internasional RU VII Kasim (Kotlin & Laravel)
+    - Computer Literacy Instructor at SDN Sendangsari (KKN Program)
 
   ════════════════════
   TECH STACK
@@ -84,6 +94,18 @@ const String resumeContext = """
     - NOT a language-learning application
     - Reference:
       https://github.com/Windstrom5/nihonGO
+
+  4. Karaoke App (Work In Progress)
+    - Multiplatform application (Compose)
+    - AI-powered vocal separation and lyrics generation
+    - Currently in early development/research phase
+    - NO public GitHub repository yet
+
+  5. Fatebound Quest (Work In Progress)
+    - Unreal Engine 5 Roguelike Game
+    - Dynamic dice and tile-based systems
+    - D&D inspired mechanics
+    - Currently in active development (WIP)
 
   ════════════════════
   GITHUB (REFERENCE ONLY)

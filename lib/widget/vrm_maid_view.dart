@@ -3,13 +3,40 @@ import 'dart:ui_web' as ui;
 import 'package:flutter/widgets.dart';
 import 'dart:js' as js;
 
+class VrmController {
+  _VrmMaidViewState? _state;
+
+  Function()? onSpeechStart;
+  Function()? onSpeechEnd;
+  Function()? onReady;
+
+  void attach(_VrmMaidViewState state) {
+    _state = state;
+  }
+
+  void detach() {
+    _state = null;
+  }
+
+  void speak(String text, {String? english}) {
+    _state?.speak(text, english: english);
+  }
+
+  void setEmotion(String emotion) {
+    _state?.setEmotion(emotion);
+  }
+}
+
 class VrmMaidView extends StatefulWidget {
-  final Function(String)?
-      onSpeak; // Optional: if you want this widget to speak directly
+  final Function(String, {String? english})? onSpeak;
+  final VoidCallback? onReady;
+  final VrmController? controller;
 
   const VrmMaidView({
     super.key,
     this.onSpeak,
+    this.onReady,
+    this.controller,
   });
 
   @override
@@ -19,94 +46,99 @@ class VrmMaidView extends StatefulWidget {
 class _VrmMaidViewState extends State<VrmMaidView> {
   html.IFrameElement? _iframe;
   bool _isReady = false;
-  final List<String> _pendingMessages = [];
+  final List<Map<String, dynamic>> _pendingMessages = [];
 
   @override
   void initState() {
     super.initState();
+    widget.controller?.attach(this);
 
     // Register unique factory (Flutter will give each instance its own viewId)
     ui.platformViewRegistry.registerViewFactory(
-      'vrm-maid-${hashCode}', // ← unique per instance to avoid conflicts
+      'vrm-maid-${hashCode}',
       (int viewId) {
         final iframe = html.IFrameElement()
           ..src = 'vrm/index.html'
           ..style.border = 'none'
           ..style.width = '100%'
           ..style.height = '100%'
-          ..allow = 'autoplay'; // helpful for voice in some browsers
+          ..allow = 'autoplay';
+
+        _iframe = iframe; // Store reference
 
         iframe.onLoad.listen((_) {
           // Optional: you can try to detect load here too
-        });
-
-        // Defer setState to after the current frame to avoid calling during build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() => _iframe = iframe);
-          }
         });
         return iframe;
       },
     );
 
-    // Global listener for 'vrm_ready' messages from any iframe
     html.window.addEventListener('message', js.allowInterop((event) {
       final e = event as html.MessageEvent;
       final data = e.data;
-      if (data is Map && data['type'] == 'vrm_ready') {
-        if (mounted) {
-          setState(() => _isReady = true);
-          _flushQueue();
+      if (data is Map) {
+        if (data['type'] == 'vrm_ready') {
+          if (mounted) {
+            print(
+                "VRM: Ready received for viewId \$${hashCode}"); // Escaped dollar sign
+            setState(() => _isReady = true);
+            _flushQueue();
+            widget.onReady?.call();
+            widget.controller?.onReady?.call();
+          }
+        } else if (data['type'] == 'speechStart') {
+          widget.controller?.onSpeechStart?.call();
+        } else if (data['type'] == 'speechEnd') {
+          widget.controller?.onSpeechEnd?.call();
         }
       }
     }));
   }
 
+  @override
+  void dispose() {
+    widget.controller?.detach();
+    super.dispose();
+  }
+
   void _flushQueue() {
     if (!_isReady || _iframe == null || _iframe!.contentWindow == null) return;
 
-    for (final text in _pendingMessages) {
-      _send(text);
+    for (final msg in _pendingMessages) {
+      _postMessage(msg);
     }
     _pendingMessages.clear();
   }
 
-  void speak(String text) {
-    if (_isReady && _iframe != null && _iframe!.contentWindow != null) {
-      _send(text);
+  void speak(String text, {String? english}) {
+    final msg = english != null
+        ? {'type': 'speak', 'japanese': text, 'english': english}
+        : {'type': 'speak', 'text': text};
+
+    if (_isReady) {
+      _postMessage(msg);
     } else {
-      _pendingMessages.add(text);
+      _pendingMessages.add(msg);
     }
-
-    // Also forward to external callback if provided
-    widget.onSpeak?.call(text);
+    widget.onSpeak?.call(text, english: english);
   }
 
-  void _send(String text) {
+  void setEmotion(String emotion) {
+    final msg = {'type': 'emotion', 'emotion': emotion};
+    if (_isReady) {
+      _postMessage(msg);
+    } else {
+      _pendingMessages.add(msg);
+    }
+  }
+
+  void _postMessage(Map<String, dynamic> msg) {
     try {
-      if (_iframe == null || _iframe!.contentWindow == null) {
-        print('Iframe or contentWindow not available');
-        _pendingMessages.add(text);
-        return;
-      }
-
-      // Use dart:html's native postMessage - much simpler and more reliable
-      _iframe!.contentWindow!.postMessage({
-        'type': 'speak',
-        'text': text,
-      }, '*');
-    } catch (e, stack) {
+      if (_iframe == null || _iframe!.contentWindow == null) return;
+      _iframe!.contentWindow!.postMessage(msg, '*');
+    } catch (e) {
       print('Failed to send to VRM: $e');
-      print('Stack: $stack');
-      _pendingMessages.add(text); // retry later
     }
-  }
-
-  @override
-  void dispose() {
-    // Optional: clean up global listener if needed (but usually safe to leave)
-    super.dispose();
   }
 
   @override

@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:animate_do/animate_do.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
+import 'hud_components.dart';
+import 'crt_overlay.dart';
 
 enum HoldemPhase {
   idle,
@@ -35,7 +37,7 @@ class Card {
 }
 
 class PokerGame extends StatefulWidget {
-  final Function(String) onSpeak;
+  final void Function(String text, {String? english}) onSpeak;
   const PokerGame({super.key, required this.onSpeak});
 
   @override
@@ -88,9 +90,12 @@ class _PokerGameState extends State<PokerGame> {
   bool playerTurn = true;
   bool showOpponentCards = false;
 
-  // Track if a raise has already happened this betting round
-  // After one raise, players can only call/fold until next phase
-  bool hasRaisedThisRound = false;
+  // Track betting state within the current street
+  bool playerActedThisRound = false;
+  bool opponentActedThisRound = false;
+  int numRaisesThisRound = 0;
+  static const int maxRaises =
+      4; // Usual cap in limit hold'em, but we'll use it for logic
 
   // Animations
   final List<GlobalKey> communityKeys = [];
@@ -178,10 +183,10 @@ class _PokerGameState extends State<PokerGame> {
   }
 
   /// Safely call onSpeak after the current frame to avoid setState during build
-  void _safeSpeak(String text) {
+  void _safeSpeak(String japanese, {String? english}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        widget.onSpeak(text);
+        widget.onSpeak(japanese, english: english);
       }
     });
   }
@@ -200,7 +205,9 @@ class _PokerGameState extends State<PokerGame> {
       playerBet = 0;
       opponentBet = 0;
       currentBet = 0;
-      hasRaisedThisRound = false; // Reset for new hand
+      playerActedThisRound = false;
+      opponentActedThisRound = false;
+      numRaisesThisRound = 0;
 
       showOpponentCards = false;
 
@@ -232,7 +239,15 @@ class _PokerGameState extends State<PokerGame> {
       status = "Pre-Flop!";
     });
 
-    _safeSpeak(dealComments[_random.nextInt(dealComments.length)]);
+    int idx = _random.nextInt(dealComments.length);
+    String jap = dealComments[idx];
+    String eng = [
+      "Let's start Poker~! Dealing cards♡",
+      "Ehehe, so exciting~! Do your best, Master!",
+      "Fufu, Sakura is strong~? I won't lose~♡",
+    ][idx];
+
+    _safeSpeak(jap, english: eng);
 
     if (!playerTurn) {
       _opponentAction();
@@ -242,8 +257,8 @@ class _PokerGameState extends State<PokerGame> {
   // ================= PLAYER ACTIONS =================
 
   void _playerBet(int amount) {
-    // Cannot raise if someone already raised this round
-    if (hasRaisedThisRound) return;
+    // Standard limit raise logic or simplified NL re-raise
+    if (numRaisesThisRound >= maxRaises) return;
 
     int toPay = amount;
     if (playerChips < toPay) return;
@@ -253,8 +268,9 @@ class _PokerGameState extends State<PokerGame> {
       playerBet += toPay;
       pot += toPay;
       currentBet = playerBet;
-      status = "You bet/raised $toPay";
-      hasRaisedThisRound = true; // Mark that a raise happened
+      status = "You raised to $currentBet";
+      numRaisesThisRound++;
+      playerActedThisRound = true;
     });
 
     playerTurn = false;
@@ -270,12 +286,13 @@ class _PokerGameState extends State<PokerGame> {
       playerBet += callAmt;
       pot += callAmt;
       status = "You called $callAmt";
+      playerActedThisRound = true;
     });
 
     playerTurn = false;
 
-    // After player calls a raise, advance to next phase
-    if (hasRaisedThisRound && playerBet == currentBet) {
+    // After player calls, check if betting round is complete
+    if (opponentActedThisRound && playerBet == opponentBet) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _nextPhase();
@@ -289,14 +306,17 @@ class _PokerGameState extends State<PokerGame> {
   void _playerCheck() {
     setState(() {
       status = "You checked.";
+      playerActedThisRound = true;
     });
 
     playerTurn = false;
 
-    // If both checked (no raise this round), advance to next phase
-    if (!hasRaisedThisRound && playerBet == opponentBet) {
-      // Opponent will check too, then advance
-      _opponentAction();
+    if (opponentActedThisRound && playerBet == opponentBet) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _nextPhase();
+        }
+      });
     } else {
       _opponentAction();
     }
@@ -310,7 +330,8 @@ class _PokerGameState extends State<PokerGame> {
       status = "You folded. Sakura wins the pot!";
     });
 
-    _safeSpeak("ご主人様 fold したの？ Sakuraの勝ち～♡");
+    _safeSpeak("ご主人様 fold したの？ Sakuraの勝ち～♡",
+        english: "You folded? Sakura wins~♡");
   }
 
   // ================= OPPONENT AI (Smart/Hard Difficulty) =================
@@ -458,8 +479,7 @@ class _PokerGameState extends State<PokerGame> {
         comment = foldComments[_random.nextInt(foldComments.length)];
       } else {
         // Determine bet sizing based on strength
-        // Cannot raise if a raise already happened this round
-        bool willRaise = !hasRaisedThisRound &&
+        bool willRaise = numRaisesThisRound < maxRaises &&
             (adjustedStrength > 0.45 || _shouldBluff(strength, toCall)) &&
             opponentChips >= bigBlind * 2;
 
@@ -469,19 +489,16 @@ class _PokerGameState extends State<PokerGame> {
           double sizingFactor;
 
           if (adjustedStrength > 0.7) {
-            // Value bet big with strong hands
             sizingFactor = 0.7 + _random.nextDouble() * 0.3;
           } else if (adjustedStrength > 0.5) {
-            // Medium sizing
             sizingFactor = 0.5 + _random.nextDouble() * 0.2;
           } else {
-            // Bluff sizing - often larger to represent strength
             sizingFactor = 0.6 + _random.nextDouble() * 0.25;
           }
 
           int targetRaise = (pot * sizingFactor).toInt();
-          int maxRaise = opponentChips;
-          int raiseAmt = targetRaise.clamp(minRaise, maxRaise);
+          int maxRaisePossible = opponentChips;
+          int raiseAmt = targetRaise.clamp(minRaise, maxRaisePossible);
 
           opponentChips -= raiseAmt;
           opponentBet += raiseAmt;
@@ -489,7 +506,8 @@ class _PokerGameState extends State<PokerGame> {
           currentBet = opponentBet;
           status = "Sakura raises to $currentBet!";
           comment = raiseComments[_random.nextInt(raiseComments.length)];
-          hasRaisedThisRound = true; // Mark that a raise happened
+          numRaisesThisRound++;
+          opponentActedThisRound = true;
           playerTurn = true;
         } else {
           // Call/Check
@@ -497,6 +515,7 @@ class _PokerGameState extends State<PokerGame> {
           opponentChips -= callAmt;
           opponentBet += callAmt;
           pot += callAmt;
+          opponentActedThisRound = true;
           if (toCall == 0) {
             status = "Sakura checks.";
             comment = checkComments[_random.nextInt(checkComments.length)];
@@ -510,8 +529,7 @@ class _PokerGameState extends State<PokerGame> {
             setState(() {});
           }
 
-          if (opponentBet == currentBet) {
-            // Schedule _nextPhase for after the current frame to avoid setState during build
+          if (playerActedThisRound && opponentBet == currentBet) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 _nextPhase();
@@ -528,7 +546,29 @@ class _PokerGameState extends State<PokerGame> {
       }
 
       if (comment.isNotEmpty) {
-        _safeSpeak(comment);
+        String? eng;
+        if (raiseComments.contains(comment)) {
+          int i = raiseComments.indexOf(comment);
+          eng = [
+            "I'm raising here~! How about that?♡",
+            "Ehehe, bet up~! Your turn, Master",
+            "Fufu, maybe a strong hand~? Raise!",
+          ][i];
+        } else if (callComments.contains(comment)) {
+          int i = callComments.indexOf(comment);
+          eng = [
+            "I'll call~♡",
+            "Fufu, OK~! Let's go next",
+            "Ehehe, call! So exciting~"
+          ][i];
+        } else if (checkComments.contains(comment)) {
+          int i = checkComments.indexOf(comment);
+          eng = ["Check~♡", "Fufu, check! Your turn, Master~"][i];
+        } else if (foldComments.contains(comment)) {
+          int i = foldComments.indexOf(comment);
+          eng = ["Uuu~ fold... You won♡", "Kuu~ I'll win next time~!"][i];
+        }
+        _safeSpeak(comment, english: eng);
       }
     });
   }
@@ -557,6 +597,16 @@ class _PokerGameState extends State<PokerGame> {
   void _nextPhase() {
     if (!mounted) return;
 
+    // Reset betting state for the new street
+    setState(() {
+      playerBet = 0;
+      opponentBet = 0;
+      currentBet = 0;
+      playerActedThisRound = false;
+      opponentActedThisRound = false;
+      numRaisesThisRound = 0;
+    });
+
     String? phaseComment;
     if (phase == HoldemPhase.preflop) {
       communityCards
@@ -583,20 +633,27 @@ class _PokerGameState extends State<PokerGame> {
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        playerBet = 0;
-        opponentBet = 0;
-        currentBet = 0;
-        hasRaisedThisRound =
-            false; // Reset raise tracking for new betting round
-        // Postflop first act: non-button
-        playerTurn = !playerIsButton;
-      });
-    }
+    // Postflop first act: non-button acts first
+    setState(() {
+      playerTurn = !playerIsButton;
+    });
 
     if (phaseComment != null) {
-      _safeSpeak(phaseComment);
+      String? eng;
+      if (phaseComments[HoldemPhase.flop]!.contains(phaseComment)) {
+        eng = phaseComment == phaseComments[HoldemPhase.flop]![0]
+            ? "Flop is here~! How is it?♡"
+            : "Ehehe, board revealed~!";
+      } else if (phaseComments[HoldemPhase.turn]!.contains(phaseComment)) {
+        eng = phaseComment == phaseComments[HoldemPhase.turn]![0]
+            ? "It's the turn~♡ So exciting~"
+            : "Fufu, next card~!";
+      } else if (phaseComments[HoldemPhase.river]!.contains(phaseComment)) {
+        eng = phaseComment == phaseComments[HoldemPhase.river]![0]
+            ? "It's the river~! Last one♡"
+            : "Ehehe, this will decide it~!";
+      }
+      _safeSpeak(phaseComment, english: eng);
     }
 
     if (!playerTurn) {
@@ -763,7 +820,28 @@ class _PokerGameState extends State<PokerGame> {
       });
     }
 
-    _safeSpeak(comment);
+    String? eng;
+    if (winComments.contains(comment)) {
+      int i = winComments.indexOf(comment);
+      eng = [
+        "Yay~! Sakura wins~!✨",
+        "Ehehe~ I won against Master♡",
+        "Kyaa~! So happy~!",
+      ][i];
+    } else if (loseComments.contains(comment)) {
+      int i = loseComments.indexOf(comment);
+      eng = [
+        "Uuu~ I lost...💦",
+        "Master is too strong~♡",
+        "I'll definitely win next time!",
+      ][i];
+    } else if (splitComments.contains(comment)) {
+      eng = comment == splitComments[0]
+          ? "Split pot~! Fufu, it's fair♡"
+          : "Tie~! Let's play again~";
+    }
+
+    _safeSpeak(comment, english: eng);
   }
 
   String _rankName(int rank) {
@@ -792,207 +870,406 @@ class _PokerGameState extends State<PokerGame> {
         phase != HoldemPhase.showdown &&
         playerTurn;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.green[800],
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 20,
-              spreadRadius: 5),
-        ],
+    return CrtOverlay(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 900.w, maxHeight: 600.h),
+          child: HUDContainer(
+            accentColor: Colors.greenAccent,
+            opacity: 0.1,
+            showGrid: true,
+            padding: EdgeInsets.zero,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF002200).withOpacity(0.3),
+                borderRadius: BorderRadius.circular(24.r),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24.r),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.05,
+                        child: Image.network(
+                          "https://www.transparenttextures.com/patterns/carbon-fibre.png",
+                          repeat: ImageRepeat.repeat,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(12.w),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Pot Display
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: _buildHUDStat(
+                                  "POT", "$pot", Colors.yellowAccent),
+                            ),
+                            SizedBox(height: 5.h),
+
+                            // Opponent Side
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildPlayerInfo(
+                                    "Sakura", opponentChips, Colors.pinkAccent),
+                                SizedBox(width: 20.w),
+                                Row(
+                                  children: opponentHand
+                                      .map((c) => _buildCard(c,
+                                          isBack: !showOpponentCards))
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 15.h),
+
+                            // Community Cards
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 12.h, horizontal: 15.w),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                    color: Colors.white.withOpacity(0.05)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(5, (i) {
+                                  String card = i < communityCards.length
+                                      ? communityCards[i]
+                                      : '🂠';
+                                  bool isBack = i >= communityCards.length;
+                                  return Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 4.w),
+                                    child: _buildCard(card,
+                                        isBack: isBack, isCommunity: true),
+                                  );
+                                }),
+                              ),
+                            ),
+
+                            SizedBox(height: 15.h),
+
+                            // Player Side
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: playerHand
+                                      .map((c) => _buildCard(c))
+                                      .toList(),
+                                ),
+                                SizedBox(width: 20.w),
+                                _buildPlayerInfo(
+                                    "You", playerChips, Colors.cyanAccent),
+                              ],
+                            ),
+
+                            SizedBox(height: 20.h),
+
+                            // Status & Controls
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.r),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(color: Colors.white10),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    status.toUpperCase(),
+                                    style: GoogleFonts.vt323(
+                                      color: Colors.yellowAccent,
+                                      fontSize: 20.sp,
+                                      letterSpacing: 1.2,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (showButtons ||
+                                      (phase == HoldemPhase.idle ||
+                                          phase == HoldemPhase.showdown))
+                                    SizedBox(height: 10.h),
+                                  if (phase == HoldemPhase.idle ||
+                                      phase == HoldemPhase.showdown)
+                                    _buildGameButton(
+                                        phase == HoldemPhase.idle
+                                            ? "DEAL"
+                                            : "PLAY AGAIN",
+                                        _deal,
+                                        Colors.purpleAccent),
+                                  if (showButtons)
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          if (!facingBet) ...[
+                                            _buildGameButton("CHECK",
+                                                _playerCheck, Colors.grey),
+                                            SizedBox(width: 8.w),
+                                            if (numRaisesThisRound < maxRaises)
+                                              _buildGameButton(
+                                                  "BET",
+                                                  () =>
+                                                      _playerBet(bigBlind * 2),
+                                                  Colors.cyanAccent),
+                                          ] else ...[
+                                            _buildGameButton("FOLD",
+                                                _playerFold, Colors.redAccent),
+                                            SizedBox(width: 8.w),
+                                            _buildGameButton("CALL",
+                                                _playerCall, Colors.blueAccent),
+                                            SizedBox(width: 8.w),
+                                            if (numRaisesThisRound < maxRaises)
+                                              _buildGameButton(
+                                                  "RAISE",
+                                                  () => _playerBet(
+                                                      toCall + bigBlind * 2),
+                                                  Colors.orangeAccent),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  if (!playerTurn &&
+                                      phase != HoldemPhase.idle &&
+                                      phase != HoldemPhase.showdown)
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 12.w,
+                                          height: 12.w,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(
+                                                Colors.pinkAccent
+                                                    .withOpacity(0.5)),
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.w),
+                                        Text(
+                                          "Sakura thinking...",
+                                          style: GoogleFonts.vt323(
+                                              color: Colors.pinkAccent
+                                                  .withOpacity(0.6),
+                                              fontSize: 14.sp),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      padding: EdgeInsets.all(20.w),
+    );
+  }
+
+  Widget _buildHUDStat(String label, String value, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.1), Colors.transparent],
+        ),
+        borderRadius: BorderRadius.circular(4.r),
+        border: Border(
+          right: BorderSide(color: color, width: 2),
+          bottom: BorderSide(color: color.withOpacity(0.3), width: 1),
+        ),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text("TEXAS HOLD'EM",
-              style: TextStyle(
-                  fontSize: 26.sp,
-                  color: Colors.amber,
-                  fontWeight: FontWeight.bold)),
-          SizedBox(height: 8.h),
-          Text("You: $playerChips   Sakura: $opponentChips   Pot: $pot",
-              style: TextStyle(color: Colors.white, fontSize: 18.sp)),
-
-          SizedBox(height: 20.h),
-
-          // Community Cards with animation
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (i) {
-              String card =
-                  i < communityCards.length ? communityCards[i] : '🂠';
-              bool isBack = i >= communityCards.length;
-              return FadeInUp(
-                key: communityKeys[i],
-                duration: const Duration(milliseconds: 500),
-                delay: Duration(milliseconds: i * 200),
-                child: _buildCard(card, isBack: isBack),
-              );
-            }),
-          ),
-
-          SizedBox(height: 20.h),
-
-          // Opponent Hand
-          Text("Sakura",
-              style: TextStyle(color: Colors.pinkAccent, fontSize: 18.sp)),
-          FadeIn(
-            key: opponentHandKey,
-            duration: const Duration(milliseconds: 800),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: opponentHand
-                  .map((c) => _buildCard(c, isBack: !showOpponentCards))
-                  .toList(),
-            ),
-          ),
-
-          SizedBox(height: 20.h),
-
-          // Player Hand
-          Text("You",
-              style: TextStyle(color: Colors.cyanAccent, fontSize: 18.sp)),
-          FadeIn(
-            key: playerHandKey,
-            duration: const Duration(milliseconds: 800),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: playerHand.map((c) => _buildCard(c)).toList(),
-            ),
-          ),
-
-          SizedBox(height: 20.h),
-          Text(status,
-              style: TextStyle(
-                  color: Colors.yellowAccent,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold)),
-
-          SizedBox(height: 20.h),
-
-          if (phase == HoldemPhase.idle || phase == HoldemPhase.showdown)
-            ElevatedButton(
-              onPressed: _deal,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purpleAccent,
-                padding: EdgeInsets.symmetric(horizontal: 40.w, vertical: 12.h),
-              ),
-              child: Text(phase == HoldemPhase.idle ? "DEAL" : "PLAY AGAIN",
-                  style: TextStyle(fontSize: 18.sp)),
-            ),
-
-          if (showButtons)
-            if (!facingBet)
-              Wrap(
-                spacing: 10.w,
-                children: [
-                  ElevatedButton(
-                      onPressed: _playerCheck, child: const Text("Check")),
-                  // Only show bet button if no raise has happened yet
-                  if (!hasRaisedThisRound)
-                    ElevatedButton(
-                        onPressed: () => _playerBet(bigBlind * 2),
-                        child: Text("Bet ${bigBlind * 2}")),
-                ],
-              )
-            else
-              Wrap(
-                spacing: 10.w,
-                children: [
-                  // Only show raise button if no raise has happened yet
-                  if (!hasRaisedThisRound)
-                    ElevatedButton(
-                        onPressed: () => _playerBet(toCall + bigBlind * 2),
-                        child: Text("Raise to ${currentBet + bigBlind * 2}")),
-                  ElevatedButton(
-                      onPressed: _playerCall, child: Text("Call $toCall")),
-                  ElevatedButton(
-                    onPressed: _playerFold,
-                    style:
-                        ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    child: const Text("Fold"),
-                  ),
-                ],
-              ),
-
-          if (!playerTurn &&
-              phase != HoldemPhase.idle &&
-              phase != HoldemPhase.showdown)
-            const Text("Sakura is thinking...",
-                style: TextStyle(color: Colors.white70)),
+          Text(label,
+              style: GoogleFonts.vt323(
+                  fontSize: 12.sp,
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1)),
+          Text(value,
+              style: GoogleFonts.vt323(
+                  fontSize: 20.sp,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  shadows: [Shadow(blurRadius: 8, color: color)])),
         ],
       ),
     );
   }
 
-  Widget _buildCard(String cardStr, {bool isBack = false}) {
-    if (isBack) {
-      return Container(
-        width: 60.w,
-        height: 90.h,
+  Widget _buildPlayerInfo(String name, int chips, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: color, width: 3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name.toUpperCase(),
+            style: GoogleFonts.vt323(
+                fontSize: 16.sp, color: color, fontWeight: FontWeight.w900),
+          ),
+          Text(
+            "$chips ◈",
+            style: GoogleFonts.vt323(
+                fontSize: 18.sp,
+                color: Colors.white,
+                fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameButton(String label, VoidCallback? onPressed, Color color) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
         decoration: BoxDecoration(
-          color: Colors.blueGrey[700],
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: Colors.grey[900]!),
+          color: Colors.black,
+          border: Border.all(color: color, width: 2),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(2, 2)),
+              color: color.withOpacity(0.3),
+              offset: const Offset(4, 4),
+            ),
           ],
         ),
-        child: const Center(
-          child: Icon(Icons.casino, color: Colors.white70, size: 30),
+        child: Text(
+          label,
+          style: GoogleFonts.vt323(
+              color: color, fontSize: 18.sp, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(String cardStr,
+      {bool isBack = false, bool isCommunity = false}) {
+    double cardW = isCommunity ? 48.w : 52.w;
+    double cardH = isCommunity ? 72.h : 78.h;
+
+    if (isBack) {
+      return Container(
+        width: cardW,
+        height: cardH,
+        margin: EdgeInsets.symmetric(horizontal: 2.w),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F1B),
+          borderRadius: BorderRadius.circular(6.r),
+          border:
+              Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.cyanAccent.withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.1,
+                child:
+                    Icon(Icons.grid_3x3, color: Colors.cyanAccent, size: 40.r),
+              ),
+            ),
+            Center(
+              child: Icon(Icons.security,
+                  color: Colors.cyanAccent.withOpacity(0.8), size: 24.r),
+            ),
+          ],
         ),
       );
     }
 
     Card card = Card(cardStr);
-    Color color =
-        (card.suit == '♥' || card.suit == '♦') ? Colors.red : Colors.black;
+    bool isRed = (card.suit == '♥' || card.suit == '♦');
+    Color cardColor = isRed ? Colors.pinkAccent : Colors.cyanAccent;
     String rankDisplay = ranks[card.value - 2];
 
     return Container(
-      width: 60.w,
-      height: 90.h,
+      width: cardW,
+      height: cardH,
+      margin: EdgeInsets.symmetric(horizontal: 2.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.black.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(6.r),
+        border: Border.all(color: cardColor.withOpacity(0.6), width: 1.5),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 4,
-              offset: const Offset(2, 2)),
+            color: cardColor.withOpacity(0.2),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
         ],
       ),
       child: Stack(
         children: [
+          // Corner Rank
           Positioned(
             top: 4.h,
             left: 4.w,
             child: Text(rankDisplay,
-                style: TextStyle(
-                    fontSize: 16.sp,
-                    color: color,
-                    fontWeight: FontWeight.bold)),
+                style: GoogleFonts.orbitron(
+                    fontSize: 14.sp,
+                    color: cardColor,
+                    fontWeight: FontWeight.w900,
+                    height: 1.0)),
           ),
+          // Center Suit
           Center(
             child: Text(card.suit,
-                style: TextStyle(fontSize: 24.sp, color: color)),
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  color: cardColor,
+                  shadows: [
+                    Shadow(blurRadius: 10, color: cardColor.withOpacity(0.5)),
+                  ],
+                )),
           ),
+          // Bottom Corner Rank (Rotated)
           Positioned(
             bottom: 4.h,
             right: 4.w,
             child: Transform.rotate(
-              angle: 3.1416, // 180 degrees
+              angle: pi,
               child: Text(rankDisplay,
-                  style: TextStyle(
-                      fontSize: 16.sp,
-                      color: color,
-                      fontWeight: FontWeight.bold)),
+                  style: GoogleFonts.orbitron(
+                      fontSize: 14.sp,
+                      color: cardColor,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0)),
             ),
           ),
         ],

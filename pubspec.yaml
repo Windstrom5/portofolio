@@ -57,6 +57,8 @@ dependencies:
   flutter_markdown: ^0.7.1
   geolocator: ^12.0.0    # browser location (web supported)
   intl: ^0.19.0          # date formatting if needed
+  chess: ^0.8.1
+  chess_vectors_flutter: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -133,3 +135,10 @@ flutter:
     - family: HACKED
       fonts:
         - asset: fonts/HACKED.ttf 
+    - family: NotoSans
+      fonts:
+        - asset: fonts/NotoSans-Regular.ttf
+        - asset: fonts/NotoSans-Bold.ttf
+          weight: 700
+        - asset: fonts/NotoSans-Italic.ttf
+          style: italic

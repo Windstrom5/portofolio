@@ -1,85 +1,164 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:html' as html;
 
-class CertificateCard extends StatelessWidget {
+class AchievementListItem extends StatelessWidget {
   final String certificateName;
   final String organizationName;
+  final String description;
   final String imagePath;
+  final String date;
+  final List<String> skills;
 
-  const CertificateCard({
+  const AchievementListItem({
+    Key? key,
     required this.certificateName,
     required this.organizationName,
     required this.imagePath,
-  });
+    this.description =
+        "Professional certification validating specialized skills and knowledge.",
+    this.date = "2024-01-01",
+    this.skills = const ["Skill 1", "Skill 2"],
+  }) : super(key: key);
 
-  Future<void> _downloadCertificate(String assetPath) async {
-    final html.AnchorElement anchorElement = html.AnchorElement(href: assetPath)
+  Future<void> _downloadCertificate() async {
+    html.AnchorElement(href: imagePath)
       ..setAttribute("download", "certificate.jpg")
       ..click();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        _downloadCertificate(imagePath); // Call download function
-      },
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 150.w, // Set maximum width for the card
-          maxHeight: 200.h, // Set maximum height for the card
-        ),
-        child: Card(
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 3,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                  child: Image.asset(
-                    imagePath,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: SingleChildScrollView(
+    return Container(
+      margin: EdgeInsets.only(bottom: 24.h),
+      child: Stack(
+        children: [
+          // Background with sharp cut
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: Border.all(
+                  color: Colors.purpleAccent.withOpacity(0.5), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.purpleAccent.withOpacity(0.1),
+                  offset: const Offset(4, 4),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                // Info (Left)
+                Expanded(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        certificateName,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 10.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: Colors.purpleAccent.withOpacity(0.2),
+                          border: const Border(
+                              left: BorderSide(
+                                  color: Colors.purpleAccent, width: 4)),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 5.h), // Reduced space between texts
-                      Text(
-                        organizationName,
-                        style: TextStyle(
-                          fontSize: 14.sp,
+                        child: Text(
+                          certificateName.toUpperCase(),
+                          style: GoogleFonts.orbitron(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 10.h), // Added extra space at the bottom
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Icon(Icons.bolt,
+                              color: Colors.yellowAccent, size: 14.sp),
+                          SizedBox(width: 6.w),
+                          Text(
+                            organizationName,
+                            style: GoogleFonts.vt323(
+                              color: Colors.white70,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          Text(
+                            " // $date",
+                            style: GoogleFonts.vt323(
+                              color: Colors.purpleAccent.withOpacity(0.7),
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+                      Wrap(
+                        spacing: 8.w,
+                        runSpacing: 4.h,
+                        children: skills
+                            .take(5)
+                            .map((skill) => Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    border: Border.all(color: Colors.white12),
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                  child: Text(
+                                    skill.toUpperCase(),
+                                    style: GoogleFonts.vt323(
+                                        color: Colors.cyanAccent,
+                                        fontSize: 11.sp),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                SizedBox(width: 20.w),
+                // Image (Right)
+                Container(
+                  width: 100.w,
+                  height: 100.w,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(color: Colors.white24),
+                    image: DecorationImage(
+                      image: AssetImage(imagePath),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          // Sporty accent - Speed lines placeholder
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              width: 40,
+              height: 4,
+              color: Colors.yellowAccent,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: Container(
+              width: 4,
+              height: 40,
+              color: Colors.cyanAccent,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,15 +1,12 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:project_test/model/Education_card.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'model/ProjectGrid.dart';
 import 'model/resume_generator.dart';
-import 'model/certificate_card.dart';
 import 'package:dev_icons/dev_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_test/widget/crt_overlay.dart';
 import 'package:project_test/widget/ai_chat_panel.dart';
 import 'package:project_test/widget/Loader_Gate.dart';
 import '../model/chat_message.dart';
@@ -24,6 +21,19 @@ import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import '../llm/llm_service.dart';
 import 'widget/poker.dart';
+import 'widget/chess_game.dart';
+import 'widget/discord_activity_widget.dart';
+import 'widget/premier_league_table.dart';
+import 'widget/cursor_glow.dart';
+import 'model/work_experience_model.dart';
+import 'model/project_model.dart';
+import 'model/cv_models.dart';
+import 'widget/crt_overlay.dart';
+import 'widget/sakura_particles.dart';
+import 'widget/spotify_player.dart';
+import 'widget/email_compose.dart';
+import 'widget/tech_marquee.dart';
+import 'widget/project_store.dart';
 
 void main() {
   runApp(MyApp());
@@ -89,12 +99,18 @@ class _HomePageState extends State<HomePage> {
   late DateTime _appStartTime;
   String _weatherTemp = "—";
   String _weatherIcon = "🌤️";
+
+  bool _discordMinimized = true;
   String _weatherDesc = "Loading...";
   String _locationText = "Detecting...";
   int _cpuCores = 0;
   double _ramGb = 0.0;
   int _fakeCpuLoad = 35; // we'll animate it a bit
   Timer? _cpuLoadTimer; // Timer reference for proper disposal
+
+  bool _plTableMinimized = true;
+  bool _showSpotify = false;
+  bool _showEmail = false;
   @override
   void initState() {
     super.initState();
@@ -377,13 +393,20 @@ class _HomePageState extends State<HomePage> {
         index = 3;
       else if (target == "profile")
         index = 4;
-      else if (target == "tic_tac_toe")
+      else if (target == "experience")
         index = 5;
-      else if (target == "rock_paper_scissors")
+      else if (target == "tic_tac_toe" || target == "tictactoe")
         index = 6;
+      else if (target == "rock_paper_scissors" || target == "rps")
+        index = 7;
       else if (target == "resume.pdf") {
         final resumePdf = ResumePdf();
-        final pdfBytes = await resumePdf.generate();
+        final pdfBytes = await resumePdf.generate(
+          projects: allProjects,
+          experiences: allWorkExperiences,
+          education: allEducation,
+          achievements: allAchievements,
+        );
         resumePdf.downloadPdfWeb(pdfBytes, 'resume_angga.pdf');
         additionalTerminalOutput.add("Downloading resume.pdf...");
         return;
@@ -431,6 +454,7 @@ class _HomePageState extends State<HomePage> {
 
       additionalTerminalOutput.addAll([
         "  OS: Flutter Web / Browser Distro",
+        "  Host: Windstrom5 Portfolio",
         "  Kernel: WebGPU / CanvasKit",
         "  Uptime: $uptime",
         "  Resolution: ${w}x${h} @ ${dpr.toStringAsFixed(1)}x",
@@ -495,7 +519,7 @@ class _HomePageState extends State<HomePage> {
 
       // Make reasonable estimates (browser only gives rough value)
       final usedGb = totalGb * 0.45; // pretend ~45% used
-      final freeGb = totalGb - usedGb;
+      final freeGb = totalGb * 0.55;
       final buffCache = totalGb * 0.15; // pretend some cached
 
       final totalStr = totalGb.toStringAsFixed(1) + 'G';
@@ -699,10 +723,7 @@ class _HomePageState extends State<HomePage> {
                   bottomLeft: Radius.circular(8.r),
                   bottomRight: Radius.circular(8.r),
                 ),
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(16.r),
-                  child: child, // ← your GridView / Column etc. goes here
-                ),
+                child: child,
               ),
             ),
           ],
@@ -793,7 +814,12 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton.icon(
                       onPressed: () async {
                         final resumePdf = ResumePdf();
-                        final pdfBytes = await resumePdf.generate();
+                        final pdfBytes = await resumePdf.generate(
+                          projects: [],
+                          experiences: [],
+                          education: [],
+                          achievements: [],
+                        );
                         resumePdf.downloadPdfWeb(pdfBytes, 'resume_angga.pdf');
                       },
                       icon: const Icon(Icons.download, size: 16),
@@ -856,9 +882,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _profileInfoCard(IconData icon, String label, String value) {
+  Widget _profileInfoCard(IconData icon, String title, String value) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12.r),
@@ -866,30 +892,17 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.cyanAccent, size: 20.sp),
+          Icon(icon, color: Colors.cyanAccent, size: 18.sp),
           SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12.sp,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: TextStyle(color: Colors.white54, fontSize: 11.sp)),
+              Text(value,
+                  style: TextStyle(color: Colors.white, fontSize: 13.sp)),
+            ],
+          )
         ],
       ),
     );
@@ -929,114 +942,484 @@ class _HomePageState extends State<HomePage> {
         content = _buildTerminalHome();
         break;
       case 1:
-        content = GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 3,
-          childAspectRatio: 0.75, // Slightly adapted
-          mainAxisSpacing: 20.0,
-          crossAxisSpacing: 20.0,
-          children: const [
-            ProjectGrid(
-              name: "Go Fit",
-              language: "HTML, JS",
-              platform: Icon(FontAwesomeIcons.globe, color: Colors.blue),
-              url: "https://github.com/Windstrom5/Go-Fit-android",
-              imageUrl:
-                  "https://raw.githubusercontent.com/Windstrom5/Go-Fit-android/master/app/src/main/res/drawable/logo.png",
-            ),
-            ProjectGrid(
-              name: "Go Fit Android",
-              language: "Kotlin",
-              platform: Icon(FontAwesomeIcons.android, color: Colors.green),
-              url: "https://github.com/Windstrom5/go_fit",
-              imageUrl:
-                  "https://raw.githubusercontent.com/Windstrom5/Go-Fit-android/master/app/src/main/res/drawable/logo.png",
-            ),
-            ProjectGrid(
-              name: "WorkHubs",
-              language: "Kotlin",
-              platform: Icon(FontAwesomeIcons.android, color: Colors.green),
-              url: "https://github.com/Windstrom5/Workhubs-Android-App",
-              imageUrl:
-                  "https://raw.githubusercontent.com/Windstrom5/Workhubs-Android-App/master/app/src/main/res/drawable/logo.png",
-            ),
-            ProjectGrid(
-              name: "NihonGo",
-              language: "Kotlin",
-              platform: Icon(FontAwesomeIcons.android, color: Colors.green),
-              url: "https://github.com/Windstrom5/backend_tugas_akhir",
-              imageUrl:
-                  "https://raw.githubusercontent.com/Windstrom5/nihonGO/master/app/src/main/res/drawable/logo.png",
-            ),
-          ],
-        );
+        content = const ProjectStoreApp();
         break;
       case 2:
-        content = GridView.count(
-          shrinkWrap: true,
-          crossAxisCount: 3,
-          childAspectRatio: 0.7,
-          mainAxisSpacing: 20.0,
-          crossAxisSpacing: 20.0,
-          children: const [
-            CertificateCard(
-              certificateName: "Researcher Management",
-              organizationName: "University of Colorado",
-              imagePath: "assets/Coursera WHAJ3WB5FKZB_page-0001.jpg",
-            ),
-            CertificateCard(
-              certificateName: "English Score",
-              organizationName: "British Council",
-              imagePath: "assets/EnglishScore.jpg",
-            ),
-          ],
-        );
+        content = _buildCertificatesView();
         break;
       case 3:
-        content = GridView.count(
-          shrinkWrap: true,
-          crossAxisCount: 3,
-          childAspectRatio: 0.7,
-          mainAxisSpacing: 20.0,
-          crossAxisSpacing: 20.0,
-          children: const [
-            EducationCard(
-                name: "SDN 001 Sungai Kunjang",
-                location: "Samarinda",
-                years: "2008-2014",
-                imagePath: "assets/sdn.jpg",
-                mapsUrl:
-                    "https://www.google.com/maps/place/SD+Negeri+001/@-0.498135,117.1203361,17z/data=!3m1!4b1!4m6!3m5!1s0x2df67efe8db30583:0x5f632eb0108b6f42!8m2!3d-0.498135!4d117.122911!16s%2Fg%2F11b7q6zjzb?entry=ttu"),
-            EducationCard(
-                name: "Universitas Atma Jaya",
-                location: "Yogyakarta",
-                years: "2020-Present",
-                imagePath: "assets/atma.jpg",
-                mapsUrl:
-                    "https://www.google.com/maps/place/Universitas+Atma+Jaya+Yogyakarta+-+Kampus+3+Gedung+Bonaventura+Babarsari/@-7.7794195,110.4135542,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7a59f1fb2f2b45:0x20986e2fe9c79cdd!8m2!3d-7.7794195!4d110.4161291!16s%2Fg%2F11cfg5l4w?entry=ttu"),
-          ],
-        );
+        content = _buildEducationView();
         break;
       case 4:
-        content = Center(
+        content = _buildProfileView();
+        break;
+      case 5:
+        content = _buildExperienceView();
+        break;
+      case 6: // Tic Tac Toe
+        content = _buildTicTacToeView();
+        break;
+      case 7: // Rock Paper Scissors
+        content = _buildRpsView();
+        break;
+      case 8: // Poker
+        content = _buildPokerView();
+        break;
+      case 9: // Chess
+        content = _buildChessView();
+        break;
+      default:
+        content = Container();
+    }
+    return _buildWindowFrame(title: _getTitle(_selectedIndex), child: content);
+  }
+
+  Widget _buildCertificatesView() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(32.r),
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hero Header
+          _buildPageHeader(
+            title: "PROFESSIONAL CERTIFICATIONS",
+            subtitle: "Verified credentials from global institutions",
+            icon: Icons.verified,
+            color: Colors.purpleAccent,
+          ),
+          SizedBox(height: 40.h),
+
+          // Grid of Certificates
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 24.w,
+              mainAxisSpacing: 24.h,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: allAchievements.length,
+            itemBuilder: (context, index) {
+              final ach = allAchievements[index];
+              return _buildRetroCertificateCard(ach);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationView() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(32.r),
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hero Header
+          _buildPageHeader(
+            title: "ACADEMIC BACKGROUND",
+            subtitle: "Foundations of knowledge and specialized study",
+            icon: Icons.school,
+            color: Colors.cyanAccent,
+          ),
+          SizedBox(height: 40.h),
+
+          // Timeline/List of Education
+          ...allEducation.map((edu) => _buildRetroEducationPage(edu)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageHeader({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: EdgeInsets.only(bottom: 24.h),
+      decoration: BoxDecoration(
+        border:
+            Border(bottom: BorderSide(color: color.withOpacity(0.3), width: 2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Icon(icon, color: color, size: 32.sp),
+          ),
+          SizedBox(width: 24.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.orbitron(
+                  color: Colors.white,
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                subtitle.toUpperCase(),
+                style: GoogleFonts.vt323(
+                  color: color.withOpacity(0.7),
+                  fontSize: 16.sp,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRetroCertificateCard(AchievementModel ach) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.purpleAccent.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purpleAccent.withOpacity(0.05),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    "assets/atma.jpg", // Fallback image as thumbnails might be missing
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8)
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 12.h,
+                  left: 12.w,
+                  child: Text(
+                    ach.date,
+                    style: GoogleFonts.vt323(
+                        color: Colors.purpleAccent, fontSize: 14.sp),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16.r),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ach.certificateName,
+                  style: GoogleFonts.orbitron(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  ach.organizationName,
+                  style:
+                      GoogleFonts.vt323(color: Colors.white70, fontSize: 14.sp),
+                ),
+                SizedBox(height: 12.h),
+                // Key Learnings Header
+                Text(
+                  "VALIDATED SKILLS:",
+                  style: GoogleFonts.orbitron(
+                    color: Colors.purpleAccent.withOpacity(0.5),
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Wrap(
+                  spacing: 6.w,
+                  runSpacing: 4.h,
+                  children: ach.skills
+                      .map((s) => Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: Colors.purpleAccent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4.r),
+                              border: Border.all(
+                                  color: Colors.purpleAccent.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              s.toUpperCase(),
+                              style: GoogleFonts.vt323(
+                                  color: Colors.purpleAccent, fontSize: 10.sp),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRetroEducationPage(EducationModel edu) {
+    // Dynamic asset path based on school name
+    String assetPath = "assets/atma.jpg";
+    if (edu.schoolName.contains("SMA")) assetPath = "assets/sman.jpg";
+    if (edu.schoolName.contains("SMP")) assetPath = "assets/smpn.jpg";
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 48.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Name & Meta (Left)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      decoration: const BoxDecoration(
+                        color: Colors.cyanAccent,
+                      ),
+                      child: Text(
+                        edu.schoolName.toUpperCase(),
+                        style: GoogleFonts.orbitron(
+                          color: Colors.black,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on,
+                            color: Colors.cyanAccent, size: 16.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          edu.location,
+                          style: GoogleFonts.vt323(
+                              color: Colors.cyanAccent, fontSize: 18.sp),
+                        ),
+                        SizedBox(width: 24.w),
+                        Icon(Icons.calendar_today,
+                            color: Colors.white54, size: 14.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          edu.years,
+                          style: GoogleFonts.vt323(
+                              color: Colors.white70, fontSize: 18.sp),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Text(
+                      edu.degreeType,
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 4.h),
+                      height: 2.h,
+                      width: 100.w,
+                      color: Colors.cyanAccent,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 32.w),
+              // School Logo / Graphic (Right)
+              Container(
+                width: 140.r,
+                height: 140.r,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border.all(color: Colors.cyanAccent, width: 3),
+                  image: DecorationImage(
+                    image: AssetImage(assetPath),
+                    fit: BoxFit.cover,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.cyanAccent.withOpacity(0.3),
+                      offset: const Offset(8, 8),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 40.h),
+
+          // High-Energy Layout for Description & Learnings
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionSubheader("// DATA_DOMAIN"),
+                    Container(
+                      padding: EdgeInsets.all(16.r),
+                      decoration: BoxDecoration(
+                        border: Border(
+                            left: BorderSide(color: Colors.white24, width: 1)),
+                      ),
+                      child: Text(
+                        edu.description,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 16.sp,
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 48.w),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionSubheader("// SKILL_INITIALIZATION"),
+                    Container(
+                      padding: EdgeInsets.all(20.r),
+                      decoration: BoxDecoration(
+                        color: Colors.cyanAccent.withOpacity(0.05),
+                        border: Border.all(
+                            color: Colors.cyanAccent.withOpacity(0.2)),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(24.r),
+                        ),
+                      ),
+                      child: Text(
+                        edu.learnings,
+                        style: GoogleFonts.jetBrainsMono(
+                          color: Colors.cyanAccent,
+                          fontSize: 14.sp,
+                          height: 1.8,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: edu.skills
+                          .map((skill) => Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w, vertical: 6.h),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  border: Border.all(
+                                      color:
+                                          Colors.cyanAccent.withOpacity(0.5)),
+                                ),
+                                child: Text(
+                                  skill.toUpperCase(),
+                                  style: GoogleFonts.vt323(
+                                      color: Colors.white, fontSize: 13.sp),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 32.h),
+          const Divider(color: Colors.white10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionSubheader(String title) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Text(
+        title,
+        style: GoogleFonts.orbitron(
+          color: Colors.white38,
+          fontSize: 12.sp,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileView() {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 520.w),
+          padding: EdgeInsets.all(2.w), // Outer border padding
+          decoration: BoxDecoration(
+            color: Colors.cyanAccent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16.r),
+          ),
           child: Container(
-            constraints: BoxConstraints(maxWidth: 500.w),
             padding: EdgeInsets.all(30.w),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.purple.shade900.withOpacity(0.6),
-                  Colors.blue.shade900.withOpacity(0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              color: const Color(0xFF0D1117), // Deep space black
+              borderRadius: BorderRadius.circular(15.r),
+              border: Border.all(color: Colors.cyanAccent.withOpacity(0.5)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.cyanAccent.withOpacity(0.1),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -1045,185 +1428,554 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Profile Avatar with glow
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.cyanAccent.withOpacity(0.4),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 60.r,
-                    backgroundColor: Colors.cyan.withOpacity(0.2),
-                    backgroundImage: const AssetImage('assets/profile.jpg'),
-                  ),
-                ),
-                SizedBox(height: 20.h),
-                // Name with gradient
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [Colors.cyanAccent, Colors.purpleAccent],
-                  ).createShader(bounds),
-                  child: Text(
-                    "Angga Nugraha",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 6.h),
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.cyan.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: Colors.cyan.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    "Full Stack Developer",
-                    style: TextStyle(color: Colors.cyanAccent, fontSize: 14.sp),
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                // Info cards
-                _profileInfoCard(
-                    Icons.location_on, "Location", "Yogyakarta, Indonesia"),
-                SizedBox(height: 10.h),
-                _profileInfoCard(Icons.email, "Email", "angga@example.com"),
-                SizedBox(height: 24.h),
-                // Skills section
-                Text(
-                  "⚡ Tech Stack",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
+                // TOP HUD DECO
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _skillChip("Flutter", Colors.blue),
-                    _skillChip("Kotlin", Colors.purple),
-                    _skillChip("Vue.js", Colors.green),
-                    _skillChip("Laravel", Colors.red),
-                    _skillChip("Java", Colors.orange),
-                    _skillChip("Dart", Colors.cyan),
+                    Text("BIOS_ID: 8859-1",
+                        style: GoogleFonts.vt323(
+                            color: Colors.cyanAccent, fontSize: 10.sp)),
+                    Row(
+                      children: [
+                        Container(
+                            width: 20, height: 2, color: Colors.cyanAccent),
+                        SizedBox(width: 5.w),
+                        Container(
+                            width: 4, height: 4, color: Colors.cyanAccent),
+                      ],
+                    ),
                   ],
                 ),
-                SizedBox(height: 24.h),
-                // Bio
+                SizedBox(height: 10.h),
+                // PROFILE IMAGE WITH SCANNERS
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Decorative rings
+                    Container(
+                      width: 140.w,
+                      height: 140.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.cyanAccent.withOpacity(0.2),
+                            width: 1),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.cyanAccent.withOpacity(0.3),
+                            blurRadius: 25,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 60.r,
+                        backgroundColor: Colors.cyan.withOpacity(0.1),
+                        backgroundImage: const AssetImage('assets/profile.jpg'),
+                      ),
+                    ),
+                    // Diagonal accents
+                    Positioned(
+                      top: 0,
+                      right: 10,
+                      child: Icon(Icons.qr_code_scanner,
+                          color: Colors.cyanAccent, size: 20.sp),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 25.h),
+                // NAME & TITLE BLOCK
+                Column(
+                  children: [
+                    Text(
+                      "ANGGA NUGRAHA",
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white,
+                        fontSize: 26.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    SizedBox(height: 5.h),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.cyanAccent),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10.r),
+                          bottomRight: Radius.circular(10.r),
+                        ),
+                      ),
+                      child: Text(
+                        "FULL STACK DEVELOPER // BACKEND SPECIALIST",
+                        style: GoogleFonts.vt323(
+                          color: Colors.cyanAccent,
+                          fontSize: 12.sp,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30.h),
+                // BIO DATA SECTION
                 Container(
+                  width: double.infinity,
                   padding: EdgeInsets.all(16.w),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    color: Colors.white.withOpacity(0.03),
+                    border: Border(
+                      left: BorderSide(color: Colors.cyanAccent, width: 3.w),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _hudDataField("REGISTRY", "YOGYAKARTA, ID"),
+                      SizedBox(height: 12.h),
+                      _hudDataField("CONTACT", "ANGGAGANT@GMAIL.COM"),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 30.h),
+                // TECH STACK HEADER
+                Row(
+                  children: [
+                    Icon(Icons.bolt, color: Colors.cyanAccent, size: 18.sp),
+                    SizedBox(width: 8.w),
+                    Text(
+                      "SUBSYSTEMS / TECH_STACK",
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                        child: Divider(
+                            color: Colors.cyanAccent.withOpacity(0.3),
+                            indent: 10)),
+                  ],
+                ),
+                SizedBox(height: 15.h),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    _hudSkillChip("FLUTTER", Colors.blue),
+                    _hudSkillChip("KOTLIN", Colors.purple),
+                    _hudSkillChip("VUE.JS", Colors.green),
+                    _hudSkillChip("LARAVEL", Colors.red),
+                    _hudSkillChip("DART", Colors.blueAccent),
+                  ],
+                ),
+                SizedBox(height: 30.h),
+                // SYSTEM LOG FOOTER
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.cyanAccent.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    "🎮 Passionate Full Stack Developer from Yogyakarta, specializing in mobile & web development. Enthusiast in Gaming Tech & Innovation.",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14.sp,
-                      height: 1.6,
-                    ),
+                    "PASSIOINATE FULL STACK DEVELOPER SPECIALIZING IN MOBILE & WEB ARCHITECTURE. CURRENTLY OPTIMIZING HIGH-PERFORMANCE BACKEND SYSTEMS.",
                     textAlign: TextAlign.center,
+                    style: GoogleFonts.vt323(
+                      color: Colors.blueGrey.shade300,
+                      fontSize: 13.sp,
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        );
-        break;
-      case 5:
-        content = LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final vrmWidth =
-                (maxWidth * 0.18).clamp(150.0, 200.0); // Smaller VRM
-            final gameWidth = maxWidth - vrmWidth;
+        ),
+      ),
+    );
+  }
 
-            return SizedBox(
-              height: MediaQuery.of(context).size.height *
-                  0.8, // 👈 BOUND THE HEIGHT
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _hudDataField(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.vt323(
+                color: Colors.cyanAccent.withOpacity(0.5), fontSize: 10.sp)),
+        Text(value,
+            style: GoogleFonts.orbitron(
+              color: Colors.white,
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w500,
+            )),
+      ],
+    );
+  }
+
+  Widget _hudSkillChip(String name, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
+        borderRadius: BorderRadius.circular(4.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          SizedBox(width: 8.w),
+          Text(
+            name,
+            style: GoogleFonts.vt323(
+              color: Colors.white,
+              fontSize: 14.sp,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperienceView() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(width: 4, height: 16, color: Colors.cyanAccent),
+              SizedBox(width: 10.w),
+              Text(
+                "ACTIVE_MISSIONS / WORK_HISTORY",
+                style: GoogleFonts.orbitron(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 25.h),
+          ...allWorkExperiences.map((exp) {
+            return _buildRetroExperienceCard(exp);
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRetroExperienceCard(WorkExperienceModel exp) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 35.h),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 1. REAR SKEWED DECORATIVE PANEL (RED)
+          Positioned(
+            left: -10,
+            top: -10,
+            right: 10,
+            bottom: 10,
+            child: Transform(
+              transform: Matrix4.skewX(-0.1),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF0000), // Persona RED
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 10,
+                      offset: const Offset(4, 4),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // 2. MAIN CONTENT PANEL (BLACK)
+          Transform(
+            transform: Matrix4.skewX(-0.1),
+            child: Container(
+              padding: EdgeInsets.zero,
+              decoration: const BoxDecoration(
+                color: Colors.black,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // VRM (left side)
-                  SizedBox(
-                    width: vrmWidth,
-                    child: kIsWeb ? VrmMaidView() : const SizedBox.shrink(),
-                  ),
-
-                  // Game area — FIXED (NO Expanded in infinite height)
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: 600,
-                          maxHeight: 600, // 👈 HARD LIMIT = NO INFINITE HEIGHT
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: double.infinity,
-                          child: TicTacToe(
-                            onSpeak: _postMessageToVrm,
+                  // HEADER STRIPE
+                  Container(
+                    height: 40.h,
+                    width: double.infinity,
+                    color: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Row(
+                      children: [
+                        Text(
+                          "MISSION_INTEL",
+                          style: GoogleFonts.vt323(
+                            color: Colors.black,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
+                        const Spacer(),
+                        Text(
+                          exp.period.toUpperCase(),
+                          style: GoogleFonts.vt323(
+                            color: Colors.red,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // MAIN INFO
+                  Padding(
+                    padding: EdgeInsets.all(20.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          exp.title.toUpperCase(),
+                          style: GoogleFonts.orbitron(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        SizedBox(height: 5.h),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on,
+                                color: Color(0xFFFF0000), size: 14),
+                            SizedBox(width: 5.w),
+                            Text(
+                              exp.company.toUpperCase(),
+                              style: GoogleFonts.vt323(
+                                color: Colors.grey,
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20.h),
+                        // POINTS
+                        ...exp.points.map((point) => Padding(
+                              padding: EdgeInsets.only(bottom: 8.h),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(">",
+                                      style: TextStyle(
+                                          color: Color(0xFFFF0000),
+                                          fontWeight: FontWeight.bold)),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    child: Text(
+                                      point,
+                                      style: GoogleFonts.vt323(
+                                          color: Colors.white, fontSize: 14.sp),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )),
+                        SizedBox(height: 15.h),
+                        // TECH CHIPS (RED OUTLINE)
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: exp.techStack.map((tech) {
+                            return Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.white, width: 1.5),
+                                color: Colors.transparent,
+                              ),
+                              child: Text(
+                                tech.toUpperCase(),
+                                style: GoogleFonts.vt323(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-        break;
-      case 6:
-        content = Row(
-          children: [
-            if (kIsWeb)
-              SizedBox(
-                width: 300.w,
-                height: 500.h,
-                child: VrmMaidView(),
-              ),
-            Expanded(
-              child: RockPaperScissors(onSpeak: _postMessageToVrm),
             ),
-          ],
-        );
-        break;
-      case 7:
-        content = Row(
-          children: [
-            if (kIsWeb)
-              SizedBox(
-                width: 300.w,
-                height: 500.h,
-                child: VrmMaidView(),
+          ),
+          // 3. OVERLAY BORDER STRIPE (PERSONA STYLE)
+          Positioned(
+            bottom: -5,
+            right: 20,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
+              color: const Color(0xFFFF0000),
+              child: Text(
+                "ID: ${exp.company.substring(0, 3).toUpperCase()}_0${allWorkExperiences.indexOf(exp) + 1}",
+                style: GoogleFonts.vt323(
+                  color: Colors.white,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            Expanded(
-              child: PokerGame(onSpeak: _postMessageToVrm),
             ),
-          ],
+          ),
+          // 4. THEFT MARK (COMPLETED STAMP)
+          Positioned(
+            top: -15,
+            right: -10,
+            child: Transform.rotate(
+              angle: -0.2,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.black, width: 2),
+                ),
+                child: Text(
+                  exp.period.contains("Present") ||
+                          exp.period.contains("Currently")
+                      ? "ACTIVE!"
+                      : "CLEARED!",
+                  style: GoogleFonts.blackOpsOne(
+                    color: exp.period.contains("Present") ||
+                            exp.period.contains("Currently")
+                        ? const Color(0xFF00FFFF) // Cyan/Blue for Active
+                        : const Color(0xFFFF0000), // Red for Cleared
+                    fontSize: 16.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _hudMiniChip(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(4.r),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.vt323(
+          color: Colors.white.withOpacity(0.7),
+          fontSize: 11.sp,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTicTacToeView() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final vrmWidth = (maxWidth * 0.18).clamp(150.0, 200.0);
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: vrmWidth,
+                child: kIsWeb ? VrmMaidView() : const SizedBox.shrink(),
+              ),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 600,
+                      maxHeight: 600,
+                    ),
+                    child: CrtOverlay(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          border: Border.all(
+                              color: Colors.cyanAccent.withOpacity(0.5),
+                              width: 2),
+                        ),
+                        child: TicTacToe(onSpeak: _postMessageToVrm),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
-        break;
-      default:
-        content = Container();
-    }
-    return _buildWindowFrame(title: _getTitle(_selectedIndex), child: content);
+      },
+    );
+  }
+
+  Widget _buildRpsView() {
+    return Row(
+      children: [
+        if (kIsWeb)
+          SizedBox(
+            width: 300.w,
+            height: 500.h,
+            child: VrmMaidView(),
+          ),
+        Expanded(
+          child: RockPaperScissors(onSpeak: _postMessageToVrm),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPokerView() {
+    return Row(
+      children: [
+        if (kIsWeb)
+          SizedBox(
+            width: 300.w,
+            height: 500.h,
+            child: VrmMaidView(),
+          ),
+        Expanded(
+          child: PokerGame(onSpeak: _postMessageToVrm),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChessView() {
+    return ChessGame(
+      onClose: () => setState(() => _selectedIndex = -1),
+    );
   }
 
   String _getTitle(int index) {
@@ -1239,12 +1991,15 @@ class _HomePageState extends State<HomePage> {
       case 4:
         return "Profile";
       case 5:
-        return "Tic Tac Toe";
+        return "Work Experience";
       case 6:
-        return "Rock Paper Scissors";
+        return "Tic Tac Toe";
       case 7:
+        return "Rock Paper Scissors";
+      case 8:
         return "5-Card Draw Poker";
-
+      case 9:
+        return "Chess";
       default:
         return "";
     }
@@ -1386,31 +2141,16 @@ class _HomePageState extends State<HomePage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _dockIcon(0, FontAwesomeIcons.terminal, "Terminal"),
-          SizedBox(width: 15.w),
-          _dockIcon(1, FontAwesomeIcons.folderOpen, "Projects"),
-          SizedBox(width: 15.w),
-          _dockIcon(2, FontAwesomeIcons.trophy, "Awards"),
-          SizedBox(width: 15.w),
-          _dockIcon(3, FontAwesomeIcons.graduationCap, "Education"),
-          SizedBox(width: 15.w),
-          _dockIcon(4, FontAwesomeIcons.user, "Profile"),
-          SizedBox(width: 15.w),
-          _dockIcon(5, FontAwesomeIcons.gamepad, "TicTacToe"),
-          SizedBox(width: 15.w),
-          _dockIcon(6, FontAwesomeIcons.dice, "RPS"),
-          SizedBox(width: 15.w),
-          _dockIcon(7, FontAwesomeIcons.diamond,
-              "Poker"), // or FontAwesomeIcons.diamond / gamepad
-          Container(
-            height: 40.h,
-            width: 1,
-            color: Colors.grey.withOpacity(0.5),
-            margin: EdgeInsets.symmetric(horizontal: 15.w),
+          SizedBox(width: 16.w),
+          GestureDetector(
+            onTap: () => setState(() => _showEmail = !_showEmail),
+            child: Tooltip(
+              message: "Email",
+              child: Icon(Icons.email, color: Colors.white, size: 24.r),
+            ),
           ),
-          _linkIcon(FontAwesomeIcons.github, "https://github.com/Windstrom5"),
-          SizedBox(width: 15.w),
-          _linkIcon(FontAwesomeIcons.discord,
-              "https://discordapp.com/users/411135817449340929"),
+          SizedBox(width: 16.w),
+          _dockIcon(4, FontAwesomeIcons.user, "Profile"),
         ],
       ),
     );
@@ -1485,11 +2225,15 @@ class _HomePageState extends State<HomePage> {
         children: [
           Icon(icon, size: 48.r, color: Colors.white),
           SizedBox(height: 5.h),
-          Text(label,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 11.sp,
+                shadows: [Shadow(color: Colors.black, blurRadius: 2)]),
+          ),
         ],
       ),
     );
@@ -1497,168 +2241,284 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          // 1. Background Image
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                    'assets/bg.jpg'), // Ensure this is a cool wallpaper
-                fit: BoxFit.cover,
+      body: CursorGlow(
+        child: Stack(
+          children: [
+            // 1. Background Image
+            Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/bg.jpg'),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          // 2. Backdrop Blur (Glassmorphism for desktop feel)
-          Container(
-            color: Colors.black.withOpacity(0.2),
-          ),
-
-          Positioned(
-            left: 100.w, // Shifted right to avoid overlap with vertical dock
-            top: 80.h, // more top padding (macOS style starts lower)
-            right: 20.w,
-            bottom: 140.h, // more bottom space for your dock/taskbar
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Calculate how many icons can fit vertically (using full height)
-                const double iconHeight =
-                    90; // Height per icon including spacing
-                const double iconWidth = 80; // Fixed width for proper alignment
-                const double columnSpacing = 32; // Space between columns
-
-                final int iconsPerColumn =
-                    (constraints.maxHeight / iconHeight).floor().clamp(1, 10);
-
-                // All shortcuts in order
-                final shortcuts = [
-                  _desktopShortcut(0, FontAwesomeIcons.terminal, "Terminal"),
-                  _desktopShortcut(1, FontAwesomeIcons.folderOpen, "Projects"),
-                  _desktopShortcut(2, FontAwesomeIcons.trophy, "Certificates"),
-                  _desktopShortcut(
-                      3, FontAwesomeIcons.graduationCap, "Education"),
-                  _desktopShortcut(4, FontAwesomeIcons.user, "Profile"),
-                  _desktopShortcut(5, FontAwesomeIcons.gamepad, "TicTacToe"),
-                  _desktopShortcut(6, FontAwesomeIcons.dice, "RPS"),
-                  _desktopShortcut(7, FontAwesomeIcons.diamond, "Poker"),
-                  _desktopShortcut(null, FontAwesomeIcons.robot, "Assistant",
-                      onTap: openAiChat),
-                ];
-
-                // Build columns first (Windows-style), fill full height
-                List<Widget> columns = [];
-                for (int i = 0; i < shortcuts.length; i += iconsPerColumn) {
-                  List<Widget> columnItems = [];
-                  for (int j = i;
-                      j < i + iconsPerColumn && j < shortcuts.length;
-                      j++) {
-                    columnItems.add(
-                      SizedBox(
-                        width: iconWidth,
-                        height: iconHeight,
-                        child: Center(child: shortcuts[j]),
-                      ),
-                    );
-                  }
-                  columns.add(
-                    SizedBox(
-                      width: iconWidth + columnSpacing,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: columnItems,
-                      ),
-                    ),
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: columns,
-                );
-              },
+            // 2. Backdrop + Sakura Particles
+            Container(color: Colors.black.withOpacity(0.2)),
+            const Positioned.fill(
+              child: IgnorePointer(child: SakuraParticles()),
             ),
-          ),
 
-          // 3. Top Status Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 30.h,
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              color: Colors.black.withOpacity(0.9),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text("Applications",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp)),
-                      _systemInfoChip(
-                        Icons.memory,
-                        "$_cpuCores cores • ${_fakeCpuLoad}%",
-                      ),
+            // 2. Desktop Shortcuts (Hidden on mobile for cleaner HUD)
+            if (!isMobile)
+              Positioned(
+                left: 20.w,
+                top: 50.h,
+                bottom: 110.h,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    double iconWidth = 100.w;
+                    double iconHeight = 110.h;
+                    double columnSpacing = 20.w;
+                    int iconsPerColumn =
+                        (constraints.maxHeight / iconHeight).floor();
 
-                      SizedBox(width: 16.w),
+                    if (iconsPerColumn == 0) iconsPerColumn = 1;
 
-                      // Real RAM (browser estimate)
-                      _systemInfoChip(
-                          Icons.storage, "~${_ramGb.toStringAsFixed(0)} GB"),
+                    List<Widget> shortcuts = [
+                      _desktopShortcut(
+                          0, FontAwesomeIcons.terminal, "Terminal"),
+                      _desktopShortcut(
+                          1, FontAwesomeIcons.briefcase, "Projects"),
+                      _desktopShortcut(
+                          3, FontAwesomeIcons.graduationCap, "Education"),
+                      _desktopShortcut(
+                          5, FontAwesomeIcons.briefcase, "Experience"),
+                      _desktopShortcut(
+                          6, FontAwesomeIcons.gamepad, "TicTacToe"),
+                      _desktopShortcut(7, FontAwesomeIcons.dice, "RPS"),
+                      _desktopShortcut(8, FontAwesomeIcons.diamond, "Poker"),
+                      _desktopShortcut(9, FontAwesomeIcons.chess, "Chess"),
+                      _desktopShortcut(
+                          null, FontAwesomeIcons.robot, "Assistant",
+                          onTap: openAiChat),
+                      _desktopShortcut(
+                          null, FontAwesomeIcons.spotify, "Spotify",
+                          onTap: () =>
+                              setState(() => _showSpotify = !_showSpotify)),
+                    ];
 
-                      SizedBox(width: 16.w),
+                    List<Widget> columns = [];
+                    for (int i = 0; i < shortcuts.length; i += iconsPerColumn) {
+                      List<Widget> columnItems = [];
+                      for (int j = i;
+                          j < i + iconsPerColumn && j < shortcuts.length;
+                          j++) {
+                        columnItems.add(
+                          SizedBox(
+                            width: iconWidth,
+                            height: iconHeight,
+                            child: Center(child: shortcuts[j]),
+                          ),
+                        );
+                      }
+                      columns.add(
+                        SizedBox(
+                          width: iconWidth + columnSpacing,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: columnItems,
+                          ),
+                        ),
+                      );
+                    }
 
-                      // Real Weather
-                      _systemInfoChip(
-                        Icons.cloud,
-                        "$_weatherIcon ${_weatherTemp}°C • $_weatherDesc",
-                      ),
-                    ],
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: columns,
+                    );
+                  },
+                ),
+              ),
+
+            // 4. Right-Side Widgets (Discord + Football Table) - Hidden on mobile
+            if (!isMobile)
+              Positioned(
+                right: 10.w,
+                top: 40.h,
+                bottom: 100.h,
+                child: SizedBox(
+                  width: 280.w,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Discord Activity
+                        DiscordActivityWidget(
+                          isMinimized: _discordMinimized,
+                          onToggleMinimize: () => setState(
+                              () => _discordMinimized = !_discordMinimized),
+                        ),
+                        SizedBox(height: 12.h),
+                        // Premier League Table
+                        PremierLeagueTable(
+                          isMinimized: _plTableMinimized,
+                          onToggleMinimize: () => setState(
+                              () => _plTableMinimized = !_plTableMinimized),
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(_currentTime,
-                      style: TextStyle(color: Colors.white, fontSize: 12.sp)),
-                  Row(
-                    children: [
-                      Icon(Icons.wifi, color: Colors.white, size: 14.sp),
-                      SizedBox(width: 10.w),
-                      Icon(Icons.volume_up, color: Colors.white, size: 14.sp),
-                      SizedBox(width: 10.w),
-                      Icon(Icons.battery_full,
-                          color: Colors.white, size: 14.sp),
-                    ],
-                  )
+                ),
+              ),
+
+            // 5. Top Status Bar
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 30.h,
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                color: Colors.black.withOpacity(0.9),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(isMobile ? "APP" : "Applications",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.sp)),
+                        if (!isMobile) ...[
+                          _systemInfoChip(
+                            Icons.memory,
+                            "$_cpuCores cores • ${_fakeCpuLoad}%",
+                          ),
+                          SizedBox(width: 16.w),
+                          _systemInfoChip(Icons.storage,
+                              "~${_ramGb.toStringAsFixed(0)} GB"),
+                        ],
+                        SizedBox(width: 16.w),
+                        _systemInfoChip(
+                          Icons.cloud,
+                          "$_weatherIcon ${_weatherTemp}°C • $_weatherDesc",
+                        ),
+                      ],
+                    ),
+                    Text(_currentTime,
+                        style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+                    Row(
+                      children: [
+                        Icon(Icons.wifi, color: Colors.white, size: 14.sp),
+                        SizedBox(width: 10.w),
+                        if (!isMobile)
+                          Icon(Icons.volume_up,
+                              color: Colors.white, size: 14.sp),
+                        SizedBox(width: 10.w),
+                        Icon(Icons.battery_full,
+                            color: Colors.white, size: 14.sp),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
+
+            // 6. Main Window Content - Adaptive Positioning
+            Positioned(
+              top: 40.h,
+              bottom: isMobile ? 120.h : 100.h,
+              left: isMobile ? 10.w : 120.w,
+              right: isMobile ? 10.w : 300.w,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _buildBodyContent(),
+              ),
+            ),
+
+            // 7. Integrated Tech Marquee + Dock - REACTIVE
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 10.h,
+              height: 100.h,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left Marquee
+                  Expanded(
+                    child: ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.white,
+                            Colors.white,
+                            Colors.transparent
+                          ],
+                          stops: [0.0, 0.7, 1.0],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: const TechStackMarquee(),
+                    ),
+                  ),
+
+                  // Adaptive Dock - Center
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    child: _buildDock(),
+                  ),
+
+                  // Right Marquee
+                  Expanded(
+                    child: ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.transparent,
+                            Colors.white,
+                            Colors.white
+                          ],
+                          stops: [0.0, 0.3, 1.0],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: const TechStackMarquee(),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
 
-          // 4. Main Window Content
-          Positioned.fill(
-            top: 40.h,
-            bottom: 100.h,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _buildBodyContent(),
-            ),
-          ),
+            // 9. Spotify Player overlay
+            if (_showSpotify)
+              Positioned(
+                left: 50.w,
+                bottom: 110.h,
+                child: SpotifyPlayer(
+                  playlistId: '37i9dQZF1DX4sWSpwq3LiO',
+                  onClose: () => setState(() => _showSpotify = false),
+                ),
+              ),
 
-          // 5. Bottom Dock
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: FadeInUp(
-              duration: const Duration(milliseconds: 1000),
-              child: _buildDock(),
+            // 10. Email Compose overlay
+            if (_showEmail)
+              Center(
+                child: EmailComposeWindow(
+                  onClose: () => setState(() => _showEmail = false),
+                ),
+              ),
+
+            // 11. CRT Overlay (subtle retro scanlines)
+            const Positioned.fill(
+              child: IgnorePointer(child: CrtOverlay(child: SizedBox.expand())),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  // --- Project Section and Game UI Updates ---
 }
 
 // Simple cursor blinker for terminal
@@ -1703,142 +2563,51 @@ class TicTacToe extends StatefulWidget {
   State<TicTacToe> createState() => _TicTacToeState();
 }
 
-class _TicTacToeState extends State<TicTacToe>
-    with SingleTickerProviderStateMixin {
+class _TicTacToeState extends State<TicTacToe> {
   List<String> board = List.filled(9, '');
-  bool playerTurn = true; // Player = X, VRM = O
+  bool playerTurn = true;
   String winner = '';
-  bool isSpeaking = false; // Block actions during speech
-
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
-
-  final List<String> playerMoveReactions = [
-    "わぁ～！ そこに置いたんだ～？♡",
-    "えへへ、Xだね～！ ドキドキする～",
-    "ふふっ、次はSakuraの番だよ～！",
-    "上手～！ でも負けないからねっ♡",
-    "きゃっ、そこは危ないよ～！",
-  ];
-
-  final List<String> vrmPlaceComments = [
-    "ここに〇だよ～♡",
-    "えへへ、Sakuraの〇～！",
-    "ふふっ、どうかな～？",
-    "置いちゃった～！ 見ててね♡",
-  ];
-
-  final List<String> vrmWinComments = [
-    "やったー！ Sakuraの勝ち～！✨",
-    "えへへ～ 勝っちゃった♡",
-    "キャー！ 勝っちゃったよぉ～！",
-  ];
-
-  final List<String> vrmLoseComments = [
-    "うぅ～… 強すぎるよぉ…💦",
-    "負けちゃった…でも楽しかった～♡",
-    "くぅ～！ 次は絶対勝つからねっ！",
-  ];
-
-  final List<String> vrmDrawComments = [
-    "あいこだよ～！ また遊ぼうね♡",
-    "ふふっ、どっちもすごかった～！",
-    "引き分け～！ 楽しかったよぉ～♡",
-  ];
-
-  final List<String> vrmResetComments = [
-    "リセットしたよ～！ また最初からだよ♡",
-    "もう一回遊ぼうね～！ 準備OK～！",
-    "えへへ、がんばろっ♡",
-  ];
+  bool isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.elasticOut),
-    );
-
     Future.delayed(const Duration(milliseconds: 500), () {
       _safeSpeak("ティックタックトーで遊ぼう！ あなたが先手でXだよ～♡");
     });
   }
 
-  /// Safely call onSpeak after the current frame to avoid setState during build
-  /// Also sets isSpeaking to true and schedules unlock
   void _safeSpeak(String text) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        setState(() => isSpeaking = true);
         widget.onSpeak(text);
-        // Auto-unlock after estimated speech duration (3 seconds)
-        Future.delayed(const Duration(milliseconds: 3000), () {
-          if (mounted) {
-            setState(() => isSpeaking = false);
-          }
-        });
       }
     });
   }
 
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  void _playerTap(int index) {
-    // Block if speaking, cell taken, game over, or not player turn
-    if (isSpeaking || board[index] != '' || winner != '' || !playerTurn) return;
-
+  void _playerTap(int i) {
+    if (board[i] != '' || winner != '' || !playerTurn) return;
     setState(() {
-      board[index] = 'X';
+      board[i] = 'X';
       playerTurn = false;
     });
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted && winner == '') {
-        _safeSpeak(
-          playerMoveReactions[Random().nextInt(playerMoveReactions.length)],
-        );
-      }
-    });
-
     _checkWinner();
-
     if (winner == '') {
-      _vrmMove();
+      Future.delayed(const Duration(milliseconds: 600), _vrmMove);
     }
   }
 
   void _vrmMove() {
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted || winner != '') return;
-
-      final empty = <int>[];
-      for (int i = 0; i < 9; i++) {
-        if (board[i] == '') empty.add(i);
-      }
-
-      if (empty.isNotEmpty) {
-        final move = empty[Random().nextInt(empty.length)];
-        setState(() {
-          board[move] = 'O';
-          playerTurn = true;
-        });
-
-        _safeSpeak(
-          vrmPlaceComments[Random().nextInt(vrmPlaceComments.length)],
-        );
-
-        _checkWinner();
-      }
-    });
+    if (!mounted || winner != '') return;
+    List<int> empty = [];
+    for (int i = 0; i < 9; i++) if (board[i] == '') empty.add(i);
+    if (empty.isNotEmpty) {
+      setState(() {
+        board[empty[Random().nextInt(empty.length)]] = 'O';
+        playerTurn = true;
+      });
+      _checkWinner();
+    }
   }
 
   void _checkWinner() {
@@ -1852,42 +2621,16 @@ class _TicTacToeState extends State<TicTacToe>
       [0, 4, 8],
       [2, 4, 6],
     ];
-
-    bool hasResult = false;
-    String resultComment = '';
-
     for (final line in lines) {
-      final a = board[line[0]];
-      if (a != '' && a == board[line[1]] && a == board[line[2]]) {
-        winner = a;
-        resultComment = a == 'X'
-            ? vrmLoseComments[Random().nextInt(vrmLoseComments.length)]
-            : vrmWinComments[Random().nextInt(vrmWinComments.length)];
-        hasResult = true;
-        break;
+      if (board[line[0]] != '' &&
+          board[line[0]] == board[line[1]] &&
+          board[line[0]] == board[line[2]]) {
+        setState(() => winner = board[line[0]]);
+        return;
       }
     }
-
-    if (!hasResult && !board.contains('')) {
-      winner = 'Draw';
-      resultComment = vrmDrawComments[Random().nextInt(vrmDrawComments.length)];
-      hasResult = true;
-    }
-
-    setState(() {});
-
-    if (hasResult) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          _safeSpeak(resultComment);
-        }
-      });
-
-      _animController.forward(from: 0).then((_) {
-        if (mounted) {
-          _animController.reset();
-        }
-      });
+    if (!board.contains('')) {
+      setState(() => winner = 'Draw');
     }
   }
 
@@ -1897,387 +2640,144 @@ class _TicTacToeState extends State<TicTacToe>
       winner = '';
       playerTurn = true;
     });
+  }
 
-    _safeSpeak(
-      vrmResetComments[Random().nextInt(vrmResetComments.length)],
+  Widget _buildArcadeButton(
+      {required VoidCallback onPressed,
+      required String label,
+      required Color color}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          border: Border.all(color: color, width: 2),
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.3), offset: const Offset(4, 4))
+          ],
+        ),
+        child: Text(label,
+            style: GoogleFonts.vt323(
+                color: color, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screen = MediaQuery.of(context).size;
-
-        // SAFETY: handle infinite constraints
-        final maxW =
-            constraints.maxWidth.isFinite ? constraints.maxWidth : screen.width;
-
-        final maxH = constraints.maxHeight.isFinite
-            ? constraints.maxHeight
-            : screen.height;
-
-        double side = min(maxW * 0.8, maxH * 0.55);
-
-        // HARD CLAMP
-        side = side.clamp(260.0, 420.0);
-
-        final double cellFontSize = (side / 5).clamp(28.0, 100.0);
-
-        return Center(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.indigo.shade900.withOpacity(0.5),
-                  Colors.purple.shade900.withOpacity(0.5),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.purpleAccent.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Title
-                Text(
-                  "⭐ TIC TAC TOE ⭐",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                    shadows: [
-                      Shadow(blurRadius: 10, color: Colors.cyanAccent),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // GRID
-                Container(
-                  width: side,
-                  height: side,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemCount: 9,
-                    itemBuilder: (ctx, i) {
-                      final cell = board[i];
-                      return GestureDetector(
-                        onTap: () => _playerTap(i),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: cell == ''
-                                  ? [Colors.grey.shade800, Colors.grey.shade900]
-                                  : cell == 'X'
-                                      ? [
-                                          Colors.cyan.shade800.withOpacity(0.4),
-                                          Colors.cyan.shade900.withOpacity(0.2)
-                                        ]
-                                      : [
-                                          Colors.pink.shade800.withOpacity(0.4),
-                                          Colors.pink.shade900.withOpacity(0.2)
-                                        ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: cell == ''
-                                  ? Colors.white.withOpacity(0.2)
-                                  : cell == 'X'
-                                      ? Colors.cyanAccent.withOpacity(0.6)
-                                      : Colors.pinkAccent.withOpacity(0.6),
-                              width: 2,
-                            ),
-                            boxShadow: cell != ''
-                                ? [
-                                    BoxShadow(
-                                      color: cell == 'X'
-                                          ? Colors.cyanAccent.withOpacity(0.3)
-                                          : Colors.pinkAccent.withOpacity(0.3),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Center(
-                            child: Text(
-                              cell,
-                              style: TextStyle(
-                                color: cell == 'X'
-                                    ? Colors.cyanAccent
-                                    : cell == 'O'
-                                        ? Colors.pinkAccent
-                                        : Colors.transparent,
-                                fontSize: cellFontSize,
-                                fontWeight: FontWeight.bold,
-                                height: 1.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Status
-                AnimatedBuilder(
-                  animation: _animController,
-                  builder: (context, _) {
-                    return Transform.scale(
-                      scale: winner != '' ? _scaleAnimation.value : 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: winner != ''
-                              ? (winner == 'X'
-                                      ? Colors.cyan
-                                      : winner == 'O'
-                                          ? Colors.pink
-                                          : Colors.yellow)
-                                  .withOpacity(0.2)
-                              : Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: winner != ''
-                                ? (winner == 'X'
-                                    ? Colors.cyanAccent
-                                    : winner == 'O'
-                                        ? Colors.pinkAccent
-                                        : Colors.yellowAccent)
-                                : Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          winner == ''
-                              ? (playerTurn
-                                  ? "🎯 Your turn (X)"
-                                  : "🌸 Sakura's turn (O)")
-                              : winner == 'Draw'
-                                  ? "🤝 It's a Draw!"
-                                  : winner == 'X'
-                                      ? "🏆 You Win!"
-                                      : "🌸 Sakura Wins!",
-                          style: TextStyle(
-                            color: winner == ''
-                                ? Colors.white
-                                : winner == 'Draw'
-                                    ? Colors.yellowAccent
-                                    : winner == 'X'
-                                        ? Colors.cyanAccent
-                                        : Colors.pinkAccent,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                ElevatedButton.icon(
-                  onPressed: _reset,
-                  icon: const Icon(Icons.refresh, size: 22),
-                  label: const Text(
-                    'Play Again',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 12),
-                    backgroundColor: Colors.purpleAccent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    elevation: 8,
-                  ),
-                ),
-              ],
-            ),
+    return CrtOverlay(
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+            border:
+                Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 2),
           ),
-        );
-      },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("RETRO TACTICS",
+                  style:
+                      GoogleFonts.vt323(color: Colors.white, fontSize: 32.sp)),
+              SizedBox(height: 20.h),
+              SizedBox(
+                width: 300.w,
+                height: 300.w,
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10),
+                  itemCount: 9,
+                  itemBuilder: (ctx, i) => GestureDetector(
+                    onTap: () => _playerTap(i),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        border: Border.all(
+                            color: board[i] == ''
+                                ? Colors.white12
+                                : (board[i] == 'X'
+                                    ? Colors.cyanAccent
+                                    : Colors.pinkAccent),
+                            width: 2),
+                      ),
+                      child: Center(
+                          child: Text(board[i],
+                              style: GoogleFonts.vt323(
+                                  color: board[i] == 'X'
+                                      ? Colors.cyanAccent
+                                      : Colors.pinkAccent,
+                                  fontSize: 40.sp))),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                  winner == ''
+                      ? (playerTurn ? "YOUR TURN" : "SAKURA THINKING")
+                      : (winner == 'Draw' ? "TIE" : "$winner WINS"),
+                  style:
+                      GoogleFonts.vt323(color: Colors.white, fontSize: 24.sp)),
+              SizedBox(height: 20.h),
+              _buildArcadeButton(
+                  onPressed: _reset,
+                  label: "RESET",
+                  color: Colors.purpleAccent),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-// Keep RockPaperScissors as is, or add similar Japanese comments if you want
 class RockPaperScissors extends StatefulWidget {
   final Function(String) onSpeak;
-
   const RockPaperScissors({super.key, required this.onSpeak});
-
   @override
   _RockPaperScissorsState createState() => _RockPaperScissorsState();
 }
 
-class _RockPaperScissorsState extends State<RockPaperScissors>
-    with SingleTickerProviderStateMixin {
+class _RockPaperScissorsState extends State<RockPaperScissors> {
   String playerChoice = '';
   String vrmChoice = '';
   String result = '';
   bool isAnimating = false;
 
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
-  late Animation<Color?> _colorAnimation;
-
-  // Base voice line templates (no $playerChoice here)
-  final List<String> playerChooseReactions = [
-    "わぁ～！ それだね～♡",
-    "えへへ、きた～！ ドキドキするよぉ",
-    "ふふっ、Sakuraも負けないよ～！",
-    "きゃっ！ ずるい～♡",
-  ];
-
-  final List<String> vrmChooseComments = [
-    "Sakuraは…じゃんけん…〇〇！",
-    "えへへ～ 私のはこれだよ～♡",
-    "ふふっ、で勝負だよ～！",
-    "いくよ～！ だよっ！",
-  ];
-
-  final List<String> vrmWinComments = [
-    "やった～！ Sakuraの勝ち～！✨",
-    "えへへ～ 勝っちゃった♡",
-    "キャー！ 勝っちゃったよぉ～！ 嬉しい～！",
-  ];
-
-  final List<String> vrmLoseComments = [
-    "うぅ～… 負けちゃった…💦",
-    "くぅ～！ でも楽しかったよ～♡ 次は勝つからねっ！",
-    "え～ん… 強すぎるよぉ…！",
-  ];
-
-  final List<String> vrmDrawComments = [
-    "あいこ～！ またやろっ♡",
-    "ふふっ、どっちも同じだね～！ 楽しかった～",
-    "引き分けだよ～！ 同じで嬉しい♡",
-  ];
-
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _safeSpeak("じゃんけんぽんしよう～！ 最初に出してね♡");
-    });
-
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.elasticOut),
-    );
-
-    _colorAnimation = ColorTween(begin: Colors.white, end: Colors.yellowAccent)
-        .animate(_animController);
   }
 
-  /// Safely call onSpeak after the current frame to avoid setState during build
   void _safeSpeak(String text) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        widget.onSpeak(text);
-      }
+      if (mounted) widget.onSpeak(text);
     });
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
   }
 
   void _play(String choice) {
     if (isAnimating) return;
-
     setState(() {
       playerChoice = choice;
       isAnimating = true;
     });
-
-    // VRM chooses and announces (single speech to avoid interruption)
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-
-      List<String> options = ['Rock', 'Paper', 'Scissors'];
-      vrmChoice = options[Random().nextInt(3)];
-
-      String vrmTemplate =
-          vrmChooseComments[Random().nextInt(vrmChooseComments.length)];
-      String vrmSay = vrmTemplate.replaceAll('〇〇', vrmChoice);
-      _safeSpeak(vrmSay);
-
-      // Calculate result
-      if (playerChoice == vrmChoice) {
+      vrmChoice = ['ROCK', 'PAPER', 'SCISSORS'][Random().nextInt(3)];
+      if (playerChoice == vrmChoice)
         result = 'Draw';
-      } else if ((playerChoice == 'Rock' && vrmChoice == 'Scissors') ||
-          (playerChoice == 'Paper' && vrmChoice == 'Rock') ||
-          (playerChoice == 'Scissors' && vrmChoice == 'Paper')) {
+      else if ((playerChoice == 'ROCK' && vrmChoice == 'SCISSORS') ||
+          (playerChoice == 'PAPER' && vrmChoice == 'ROCK') ||
+          (playerChoice == 'SCISSORS' && vrmChoice == 'PAPER'))
         result = 'You Win!';
-      } else {
+      else
         result = 'Sakura Wins!';
-      }
-
-      setState(() {});
-
-      // Speak result after VRM choice speech finishes (~3 seconds)
-      Future.delayed(const Duration(milliseconds: 3500), () {
-        if (mounted) {
-          String resultComment = '';
-          if (result == 'Draw') {
-            resultComment =
-                vrmDrawComments[Random().nextInt(vrmDrawComments.length)];
-          } else if (result == 'You Win!') {
-            resultComment =
-                vrmLoseComments[Random().nextInt(vrmLoseComments.length)];
-          } else {
-            resultComment =
-                vrmWinComments[Random().nextInt(vrmWinComments.length)];
-          }
-          _safeSpeak(resultComment);
-        }
-      });
-
-      // Trigger animation
-      _animController.forward(from: 0).then((_) {
-        if (mounted) {
-          _animController.reset();
-          setState(() => isAnimating = false);
-        }
-      });
+      setState(() => isAnimating = false);
     });
   }
 
@@ -2286,212 +2786,126 @@ class _RockPaperScissorsState extends State<RockPaperScissors>
       playerChoice = '';
       vrmChoice = '';
       result = '';
-      isAnimating = false;
     });
-    _safeSpeak("リセットしたよ～！ またじゃんけんしよう♡");
   }
 
-  IconData _getIcon(String choice) {
-    switch (choice) {
-      case 'Rock':
-        return Icons.pan_tool;
-      case 'Paper':
-        return Icons.handshake;
-      case 'Scissors':
-        return Icons.content_cut;
-      default:
-        return Icons.question_mark;
-    }
+  Widget _buildArcadeButton(
+      {required VoidCallback onPressed,
+      required String label,
+      required Color color}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          border: Border.all(color: color, width: 2),
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.3), offset: const Offset(4, 4))
+          ],
+        ),
+        child: Text(label,
+            style: GoogleFonts.vt323(
+                color: color, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildChoiceCard(String label, String choice, Color color) {
+    return Column(
+      children: [
+        Text(label,
+            style: GoogleFonts.vt323(color: Colors.white, fontSize: 16.sp)),
+        SizedBox(height: 10.h),
+        Container(
+          width: 100.w,
+          height: 120.h,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            border: Border.all(color: color.withOpacity(0.5), width: 2),
+            boxShadow: [
+              BoxShadow(
+                  color: color.withOpacity(0.2), offset: const Offset(2, 2))
+            ],
+          ),
+          child: Center(
+            child: Text(
+              choice == '' ? '?' : choice.substring(0, 1),
+              style: GoogleFonts.vt323(
+                  color: color, fontSize: 48.sp, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        if (choice != '')
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: Text(choice,
+                style: GoogleFonts.vt323(color: color, fontSize: 14.sp)),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double buttonSize = screenWidth > 600 ? 120.w : 100.w;
-
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Choices display with animation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Player
-                AnimatedBuilder(
-                  animation: _animController,
-                  builder: (context, _) {
-                    return Transform.scale(
-                      scale:
-                          playerChoice.isNotEmpty ? _scaleAnimation.value : 1.0,
-                      child: _buildChoiceCard(
-                        label: playerChoice.isEmpty ? "You" : playerChoice,
-                        icon: _getIcon(playerChoice),
-                        color: playerChoice == 'Rock'
-                            ? Colors.orange
-                            : playerChoice == 'Paper'
-                                ? Colors.blue
-                                : Colors.red,
-                        borderColor: playerChoice == vrmChoice
-                            ? Colors.yellowAccent
-                            : playerChoice.isEmpty
-                                ? Colors.grey
-                                : result.contains('You Win!')
-                                    ? Colors.cyanAccent
-                                    : Colors.pinkAccent,
-                      ),
-                    );
-                  },
-                ),
-
-                Text(
-                  "VS",
-                  style: TextStyle(fontSize: 32.sp, color: Colors.white70),
-                ),
-
-                // VRM
-                AnimatedBuilder(
-                  animation: _animController,
-                  builder: (context, _) {
-                    return Transform.scale(
-                      scale: vrmChoice.isNotEmpty ? _scaleAnimation.value : 1.0,
-                      child: _buildChoiceCard(
-                        label: vrmChoice.isEmpty ? "Sakura" : vrmChoice,
-                        icon: _getIcon(vrmChoice),
-                        color: vrmChoice == 'Rock'
-                            ? Colors.orange
-                            : vrmChoice == 'Paper'
-                                ? Colors.blue
-                                : Colors.red,
-                        borderColor: vrmChoice == playerChoice
-                            ? Colors.yellowAccent
-                            : vrmChoice.isEmpty
-                                ? Colors.grey
-                                : result.contains('Sakura Wins!')
-                                    ? Colors.pinkAccent
-                                    : Colors.cyanAccent,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            SizedBox(height: 40.h),
-            // Result
-            AnimatedBuilder(
-              animation: _animController,
-              builder: (context, _) {
-                return Transform.scale(
-                  scale: result.isNotEmpty ? _scaleAnimation.value : 1.0,
-                  child: Text(
-                    result.isEmpty ? "Choose your move!" : result,
-                    style: TextStyle(
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.bold,
-                      color: result == 'Draw'
-                          ? Colors.yellowAccent
-                          : result == 'You Win!'
-                              ? Colors.cyanAccent
-                              : result == 'Sakura Wins!'
-                                  ? Colors.pinkAccent
-                                  : Colors.white,
-                      shadows: [
-                        Shadow(blurRadius: 12, color: Colors.black54),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(height: 50.h),
-
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildActionButton('Rock', Icons.pan_tool, Colors.orange),
-                _buildActionButton('Paper', Icons.handshake, Colors.blue),
-                _buildActionButton('Scissors', Icons.content_cut, Colors.red),
-              ],
-            ),
-
-            SizedBox(height: 40.h),
-
-            // Reset
-            ElevatedButton.icon(
-              onPressed: _reset,
-              icon: const Icon(Icons.refresh, size: 28),
-              label: Text('Play Again', style: TextStyle(fontSize: 18.sp)),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 18),
-                backgroundColor: Colors.purpleAccent.shade400,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(40)),
-                elevation: 10,
+    return CrtOverlay(
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+            border:
+                Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 2),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("NEO-DUEL",
+                  style:
+                      GoogleFonts.vt323(color: Colors.white, fontSize: 32.sp)),
+              SizedBox(height: 20.h),
+              if (result != '')
+                Text(result.toUpperCase(),
+                    style: GoogleFonts.vt323(
+                        color: Colors.yellowAccent, fontSize: 28.sp)),
+              SizedBox(height: 20.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildChoiceCard("YOU", playerChoice, Colors.cyanAccent),
+                  SizedBox(width: 40.w),
+                  _buildChoiceCard("SAKURA", vrmChoice, Colors.pinkAccent),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChoiceCard({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required Color borderColor,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: borderColor, width: 3),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 70.w, color: color),
-          SizedBox(height: 8.h),
-          Text(label, style: TextStyle(fontSize: 18.sp, color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, IconData icon, Color color) {
-    return GestureDetector(
-      onTap: playerChoice.isEmpty && !isAnimating ? () => _play(label) : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(30.r),
-          border: Border.all(color: color, width: 3),
-          boxShadow: [
-            BoxShadow(
-                color: color.withOpacity(0.5), blurRadius: 15, spreadRadius: 2),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 50.w, color: color),
-            SizedBox(height: 12.h),
-            Text(
-              label,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold),
-            ),
-          ],
+              SizedBox(height: 30.h),
+              if (playerChoice == '')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildArcadeButton(
+                        onPressed: () => _play('ROCK'),
+                        label: "ROCK",
+                        color: Colors.cyanAccent),
+                    SizedBox(width: 12.w),
+                    _buildArcadeButton(
+                        onPressed: () => _play('PAPER'),
+                        label: "PAPER",
+                        color: Colors.cyanAccent),
+                    SizedBox(width: 12.w),
+                    _buildArcadeButton(
+                        onPressed: () => _play('SCISSORS'),
+                        label: "SCISSORS",
+                        color: Colors.cyanAccent),
+                  ],
+                )
+              else
+                _buildArcadeButton(
+                    onPressed: _reset,
+                    label: "DUEL AGAIN",
+                    color: Colors.purpleAccent),
+            ],
+          ),
         ),
       ),
     );
