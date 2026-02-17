@@ -22,7 +22,7 @@ class _TechStackMarqueeState extends State<TechStackMarquee>
     'PostgreSQL': FontAwesomeIcons.database,
     'Firebase': Icons.local_fire_department,
     'Steam': FontAwesomeIcons.steam,
-    'Unreal engine': const IconDataBrands(0xe059),
+    'Unreal Engine': Icons.gamepad,
     'Docker': FontAwesomeIcons.docker,
     'Unity': FontAwesomeIcons.unity,
     'Python': FontAwesomeIcons.python,
