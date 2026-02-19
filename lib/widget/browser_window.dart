@@ -35,7 +35,7 @@ class _BrowserWindowState extends State<BrowserWindow> {
     // Register the iframe factory
     ui_web.platformViewRegistry.registerViewFactory(
       _viewId,
-      (int viewId) => html.IFrameElement()
+      (int viewId, {Object? params}) => html.IFrameElement()
         ..src = _currentUrl
         ..style.border = 'none'
         ..width = '100%'

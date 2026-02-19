@@ -116,9 +116,29 @@
             margin: 0 auto 20px;
           "></div>
       <div>Loading Sakura (voice engine)...</div>
-      <div style="font-size: 0.9rem; margin-top: 12px; opacity: 0.8">
+      <div id="status-text" style="font-size: 0.9rem; margin-top: 12px; opacity: 0.8">
         Japanese voice may take a few seconds...
       </div>
+    </div>
+  </div>
+
+  <!-- VOICE UNLOCK OVERLAY -->
+  <div id="voice-unlock" style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        z-index: 9998;
+        cursor: pointer;
+        backdrop-filter: blur(2px);
+      ">
+    <div style="text-align: center; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 2px solid pink;">
+      <div style="font-size: 3rem; margin-bottom: 10px;">🔊</div>
+      <div style="font-weight: bold;">Tap to Enable Sakura's Voice</div>
+      <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">(Required by browser security)</div>
     </div>
   </div>
   <div id="bubble-container">
@@ -183,6 +203,11 @@
 
       // === CRITICAL: Notify parent (Flutter) that VRM is ready ===
       console.log("VRM: Model loaded, sending vrm_ready to parent");
+      
+      // Setup LookAt - We use manual bone rotation now for better control
+      // vrm.lookAt.target = lookAtTarget; 
+      // vrm.lookAt.autoUpdate = true;
+      
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'vrm_ready' }, '*');
       }
@@ -280,7 +305,13 @@
     // Also unlock on click (fallback for strict browsers)
     window.addEventListener('click', () => {
       tryUnlockAudio();
-    }, { once: true });
+      document.getElementById("voice-unlock").style.display = "none";
+    });
+    
+    document.getElementById("voice-unlock").addEventListener('click', () => {
+      tryUnlockAudio();
+      document.getElementById("voice-unlock").style.display = "none";
+    });
 
     // Also unlock on first postMessage from parent (counts as user gesture in many browsers)
     window.addEventListener('message', function unlockOnMessage() {
@@ -325,8 +356,14 @@
         checkVoices();
         if (!voicesReady) {
           display.innerHTML = "Voice system loading... ♡<br>" + cleanEnglish;
+          // Show unlock if it seems blocked
+          document.getElementById("voice-unlock").style.display = "flex";
           return;
         }
+      }
+
+      if (!audioUnlocked) {
+         document.getElementById("voice-unlock").style.display = "flex";
       }
 
       const utter = new SpeechSynthesisUtterance(cleanJapanese);
@@ -471,22 +508,62 @@
           japanese: "あら？ご主人様？やっと来たのね！待ってたよ！",
           english: "H-Huh? Master? You're finally here! I've been waiting!"
         });
+      } else if (type === "control") {
+        // Head tracking data
+        if (event.data.x !== undefined && event.data.y !== undefined) {
+           targetX = event.data.x; // -1 to 1
+           targetY = event.data.y; // -1 to 1
+        }
       }
     });
+
+    /* ===================== LOOK AT TARGET ===================== */
+    // We will use manual bone rotation for more natural "whole head" movement
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
 
     /* ===================== ANIMATION LOOP ===================== */
     function animate() {
       requestAnimationFrame(animate);
       const delta = clock.getDelta();
+      
       if (vrm) {
         const t = clock.elapsedTime;
+
+        // Smoothly interpolate current look direction
+        const damping = 4.0 * delta;
+        currentX += (targetX - currentX) * damping;
+        currentY += (targetY - currentY) * damping;
+
+        // --- NECK & HEAD ROTATION ---
+        const neck = vrm.humanoid.getNormalizedBoneNode("neck");
+        const head = vrm.humanoid.getNormalizedBoneNode("head");
+        const spine = vrm.humanoid.getNormalizedBoneNode("spine");
+        
+        if (neck && head && !isSleeping) {
+           // Rotate neck (Yaw and Pitch)
+           // Limits: Y (Left/Right) +/- 0.7 rad, X (Up/Down) +/- 0.5 rad
+           neck.rotation.y = currentX * 0.6; 
+           neck.rotation.x = currentY * 0.5;
+           
+           // Rotate head slightly less for natural curve
+           head.rotation.y = currentX * 0.3;
+           head.rotation.x = currentY * 0.3;
+           
+           // Rotate spine slightly for body follow
+           if (spine) {
+             spine.rotation.y = currentX * 0.1;
+             spine.rotation.x = currentY * 0.1;
+           }
+        }
 
         if (isSleeping) {
           vrm.expressionManager.setValue("blink", 1.0);
           vrm.expressionManager.setValue("aa", 0);
           const sleepBreath = Math.sin(t * 1.5) * 0.1;
-          vrm.humanoid.getNormalizedBoneNode("spine").rotation.x =
-            sleepBreath;
+          if(spine) spine.rotation.x = sleepBreath;
         } else {
           vrm.expressionManager.setValue(
             "blink",

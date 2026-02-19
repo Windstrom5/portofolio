@@ -472,9 +472,8 @@ class _ProjectStoreCard extends StatelessWidget {
         }
       },
       child: Container(
-        margin: EdgeInsets.only(bottom: 8.h),
         decoration: BoxDecoration(
-          color: Colors.black,
+          color: Colors.black.withOpacity(0.8),
           border:
               Border.all(color: Colors.cyanAccent.withOpacity(0.3), width: 1),
           boxShadow: [
@@ -484,116 +483,111 @@ class _ProjectStoreCard extends StatelessWidget {
             )
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Info Area (Left)
+            // Banner Area (Top)
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      project.bannerUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(
+                          color: Colors.grey.shade900,
+                          child:
+                              Icon(Icons.broken_image, color: Colors.white54)),
+                    ),
+                    // Status Badge
+                    Positioned(
+                      top: 8.r,
+                      left: 8.r,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 6.w, vertical: 2.h),
+                        color: _getStatusColor(),
+                        child: Text(
+                          _getStatusLabel(),
+                          style: GoogleFonts.orbitron(
+                            color: Colors.black,
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Small Icon Overlay
+                    Positioned(
+                      bottom: 8.r,
+                      right: 8.r,
+                      child: Container(
+                        width: 24.r,
+                        height: 24.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                          image: DecorationImage(
+                            image: NetworkImage(project.iconUrl),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Info Area (Bottom)
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(12.r),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 6.w, vertical: 2.h),
-                          color: _getStatusColor(),
-                          child: Text(
-                            _getStatusLabel(),
-                            style: GoogleFonts.orbitron(
-                              color: Colors.black,
-                              fontSize: 8.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            project.title.toUpperCase(),
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.orbitron(
-                              color: Colors.white,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
                     Text(
-                      project.shortDescription,
-                      maxLines: 2,
+                      project.title.toUpperCase(),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11.sp,
-                        height: 1.3,
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Spacer(),
+                    SizedBox(height: 6.h),
+                    Expanded(
+                      child: Text(
+                        project.shortDescription,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.sp,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
                     Row(
                       children: [
-                        _TechChip(label: project.techStack.first),
+                        Flexible(
+                            child: _TechChip(label: project.techStack.first)),
                         if (project.techStack.length > 1) ...[
                           SizedBox(width: 4.w),
-                          _TechChip(label: project.techStack[1]),
+                          Flexible(
+                              child: _TechChip(label: project.techStack[1])),
                         ],
                       ],
                     ),
                   ],
                 ),
-              ),
-            ),
-            // Banner Area (Right)
-            Container(
-              width: 120.w,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                border: Border(left: BorderSide(color: Colors.white10)),
-              ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    project.bannerUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => Container(
-                        color: Colors.grey.shade900,
-                        child: Icon(Icons.broken_image, color: Colors.white54)),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.black.withOpacity(0.4),
-                          Colors.transparent
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Small Icon Overlay
-                  Positioned(
-                    bottom: 8.h,
-                    right: 8.w,
-                    child: Container(
-                      width: 24.r,
-                      height: 24.r,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1),
-                        image: DecorationImage(
-                          image: NetworkImage(project.iconUrl),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],

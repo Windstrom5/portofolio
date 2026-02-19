@@ -32,33 +32,35 @@ dependencies:
     sdk: flutter
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.6
-  pdf: ^3.10.1           # For PDF creation and manipulation
-  path_provider: ^2.1.1
-  permission_handler: ^11.0.1
-  printing: ^5.12.0
-  flutter_html_to_pdf: ^0.6.0  # For HTML to PDF
-  screenshot: ^3.0.0        # For capturing image from widget
-  file_picker: ^6.1.1          # Optional: for saving locatio
-  animate_do: ^3.3.4
-  htmltopdfwidgets: ^1.0.5
-  flutter_html: ^3.0.0-beta
-  universal_html: ^2.2.4
-  font_awesome_flutter: ^10.7.0
-  google_fonts: 6.2.0
-  url_launcher: ^6.2.6
-  webview_flutter: ^2.0.4
-  cached_network_image: ^3.3.1
-  http: ^1.2.1
-  open_file: ^3.2.1
-  dev_icons: ^1.0.0
-  flutter_cache_manager: ^3.3.2
-  flutter_screenutil: ^5.9.1
-  flutter_markdown: ^0.7.1
-  geolocator: ^12.0.0    # browser location (web supported)
-  intl: ^0.19.0          # date formatting if needed
-  chess: ^0.8.1
+  cupertino_icons: ^1.0.8
+  pdf: ^3.11.1
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.1
+  printing: ^5.13.1
+  flutter_html_to_pdf: ^0.7.0
+  screenshot: ^3.0.0
+  file_picker: ^10.3.10
+  animate_do: ^4.2.0
+  htmltopdfwidgets: ^2.0.1
+  flutter_html: ^3.0.0
+  universal_html: ^2.3.0
+  font_awesome_flutter: ^10.12.0
+  google_fonts: ^8.0.1
+  url_launcher: ^6.3.2
+  webview_flutter: ^4.13.1
+  cached_network_image: ^3.4.1
+  http: ^1.6.0
+  open_file: ^3.5.11
+  dev_icons: any
+  flutter_cache_manager: ^3.4.1
+  flutter_screenutil: ^5.9.3
+  flutter_markdown: ^0.7.7+1
+  geolocator: ^14.0.2
+  intl: ^0.20.2
+  chess: any
   chess_vectors_flutter: ^1.1.0
+  web: ^1.1.0
+  js: ^0.7.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -68,7 +70,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

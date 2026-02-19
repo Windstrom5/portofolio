@@ -1,0 +1,45 @@
+﻿Launching lib\main.dart on Chrome in debug mode...
+Waiting for connection from debug service on Chrome...          
+flutter : lib/utils/w
+eb_utils_web.dart:98:
+76: Error: Functions 
+converted via 'toJS' 
+require a statically 
+known function type, 
+but Type 'T' is not 
+a precise function 
+type, e.g., `void 
+Function()`.
+At line:1 char:1
++ flutter run -d 
+chrome > 
+build_log.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (lib/uti   
+ ls/web_u...id Fu    
+nction()`.:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Insert an explicit 
+cast to the expected 
+function type.
+  static JSExportedDa
+rtFunction 
+allowInterop<T 
+extends Function>(T 
+f) => f.toJS;
+                     
+                     
+                     
+            ^
+Waiting for connection from debug service on Chrome...             24.2s
+Failed to compile 
+application.

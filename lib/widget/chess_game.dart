@@ -3,7 +3,6 @@ import 'package:chess/chess.dart' as chess_pkg;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:project_test/widget/vrm_maid_view.dart';
 import 'sakura_particles.dart';
 import 'dart:math';
 import 'dart:async';
@@ -29,7 +28,9 @@ class MoveInfo {
 
 class ChessGame extends StatefulWidget {
   final VoidCallback onClose;
-  const ChessGame({super.key, required this.onClose});
+  final Function(String, {String? english, String? emotion})? onSpeak;
+
+  const ChessGame({super.key, required this.onClose, this.onSpeak});
 
   @override
   State<ChessGame> createState() => _ChessGameState();
@@ -37,7 +38,6 @@ class ChessGame extends StatefulWidget {
 
 class _ChessGameState extends State<ChessGame> {
   late chess_pkg.Chess game;
-  final VrmController vrmController = VrmController();
   int? selectedIndex;
   Difficulty _difficulty = Difficulty.Normal;
   bool isAiThinking = false;
@@ -45,8 +45,6 @@ class _ChessGameState extends State<ChessGame> {
   bool showSummary = false;
   List<MoveInfo> moveHistory = [];
   List<int> validMoveIndices = [];
-  bool isSakuraSpeaking = false;
-  String sakuraSpeechText = "";
   bool isVrmReady = false;
 
   // Professional features
@@ -66,33 +64,20 @@ class _ChessGameState extends State<ChessGame> {
   void initState() {
     super.initState();
     game = chess_pkg.Chess();
-    vrmController.onSpeechStart = () {
-      if (mounted) setState(() => isSakuraSpeaking = true);
-    };
-    vrmController.onSpeechEnd = () {
-      if (mounted) {
-        setState(() {
-          isSakuraSpeaking = false;
-        });
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) setState(() => sakuraSpeechText = "");
-        });
-      }
-    };
-    vrmController.onReady = () {
+
+    // Simulate VRM ready/greeting since controller is external
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() => isVrmReady = true);
-        vrmController.speak(
-          "お待たせしました、ご主人様！チェスのエンジンと Sakura の準備ができました！",
-          english:
-              "System Online. Chess Engine & Sakura Ready! Good luck, Master!",
-        );
-        // Start timer if game was already started by user
+        widget.onSpeak?.call("お待たせしました、ご主人様！チェスのエンジンと Sakura の準備ができました！",
+            english:
+                "System Online. Chess Engine & Sakura Ready! Good luck, Master!",
+            emotion: "joy");
         if (isGameStarted) {
           _startTimer();
         }
       }
-    };
+    });
   }
 
   @override
@@ -131,7 +116,6 @@ class _ChessGameState extends State<ChessGame> {
   void onSquareTap(int index) {
     if (!isGameStarted ||
         isAiThinking ||
-        isSakuraSpeaking ||
         game.game_over ||
         game.turn != chess_pkg.Color.WHITE) {
       return;
@@ -164,7 +148,7 @@ class _ChessGameState extends State<ChessGame> {
           setState(() => capturedBlack.add(targetPiece));
         }
 
-        _analyzeUserMove(beforeEval);
+        _analyzeUserMove(beforeEval, from: from, to: to, piece: game.get(to)!);
 
         final history = game.getHistory();
         setState(() {
@@ -196,12 +180,15 @@ class _ChessGameState extends State<ChessGame> {
     }
   }
 
-  void _analyzeUserMove(int beforeEval) {
+  void _analyzeUserMove(int beforeEval,
+      {required String from,
+      required String to,
+      required chess_pkg.Piece piece}) {
     int afterEval = _evaluateBoard();
     int diff = afterEval - beforeEval;
 
     setState(() {
-      if (diff > 5) {
+      if (diff > 50) {
         userBestMoves++;
         lastMoveQuality = "BEST";
       } else if (diff < -150) {
@@ -214,17 +201,18 @@ class _ChessGameState extends State<ChessGame> {
         lastMoveQuality = "GOOD";
       }
 
-      _triggerVrmReaction(lastMoveQuality);
+      _triggerVrmReaction(lastMoveQuality, from: from, to: to, piece: piece);
     });
   }
 
   DateTime? lastReactionTime;
 
-  void _triggerVrmReaction(String quality) {
-    // Prevent spam: only react every 5 seconds unless it's a major event (check/mate)
+  void _triggerVrmReaction(String quality,
+      {String? from, String? to, chess_pkg.Piece? piece}) {
+    // Prevent spam: only react every 1.5 seconds unless it's a major event (check/mate)
     if (lastReactionTime != null &&
         DateTime.now().difference(lastReactionTime!) <
-            const Duration(seconds: 5) &&
+            const Duration(milliseconds: 1500) &&
         !game.in_check &&
         !game.in_checkmate) {
       return;
@@ -233,6 +221,8 @@ class _ChessGameState extends State<ChessGame> {
     String ja = "";
     String en = "";
     String emotion = "neutral";
+
+    String pieceName = _getPieceName(piece);
 
     if (game.in_checkmate) {
       emotion = game.turn == chess_pkg.Color.BLACK ? "sorrow" : "joy";
@@ -244,38 +234,75 @@ class _ChessGameState extends State<ChessGame> {
           : "GG! Sakura wins this time!";
     } else if (game.in_check) {
       emotion = "angry";
-      ja = "チェックです！";
-      en = "Check!";
+      ja = "チェックです！逃がしませんよ？";
+      en = "Check! I won't let you escape!";
     } else {
       if (quality == "BLUNDER") {
         emotion = "fun";
-        ja = "あらら、それは悪手ですよ？ふふっ。";
-        en = "Oh? That was a mistake! Fufufu...";
+        ja = "あらら、$pieceName を $to に？ それは大きな失策ですよ？ふふっ。";
+        en = "Oh? Moving your $pieceName to $to? That was a blunder! Fufufu...";
+      } else if (quality == "MISTAKE") {
+        emotion = "neutral";
+        ja = "$pieceName を $to に動かしたのは…あまり良くない手ですね。";
+        en = "Moving your $pieceName to $to... that wasn't a very good move.";
       } else if (quality == "BEST") {
         emotion = "sorrow";
-        ja = "むぅ…、いい手ですね。";
-        en = "Tch. Good move.";
+        ja = "$pieceName を $to ですか…。素晴らしい一手ですね、ご主人様。";
+        en = "Your $pieceName to $to... that's a brilliant move, Master.";
       } else if (quality == "GOOD") {
-        // 30% chance to praise a normal good move
-        if (Random().nextDouble() < 0.3) {
-          List<Map<String, String>> praises = [
-            {"ja": "なかなかやりますね。", "en": "Not bad..."},
-            {"ja": "ふむ、悪くない手です。", "en": "Hmm, decent move."},
-            {"ja": "調子が出てきましたか？", "en": "Getting into the rhythm?"},
-            {"ja": "油断できませんね…。", "en": "I can't let my guard down..."},
-          ];
-          var p = praises[Random().nextInt(praises.length)];
-          ja = p["ja"]!;
-          en = p["en"]!;
-          emotion = "neutral";
-        }
+        // 100% chance to praise a normal good move as requested
+        List<Map<String, String>> praises = [
+          {
+            "ja": "$pieceName を動かしましたね。なかなかやります。",
+            "en": "You moved your $pieceName. Not bad..."
+          },
+          {
+            "ja": "$to への一手、悪くないですよ。",
+            "en": "That move to $to is actually decent."
+          },
+          {
+            "ja": "ふむ、ご主人様の $pieceName が気になりますね。",
+            "en": "Hmm, your $pieceName is bothering me..."
+          },
+          {
+            "ja": "調子が出てきましたか？ $pieceName が躍動しています。",
+            "en": "Getting into the rhythm? Your $pieceName is active!"
+          },
+          {
+            "ja": "油断できませんね、$pieceName を狙ってきましたか。",
+            "en": "I can't let my guard down, aiming with your $pieceName?"
+          },
+        ];
+        var p = praises[Random().nextInt(praises.length)];
+        ja = p["ja"]!;
+        en = p["en"]!;
+        emotion = "neutral";
       }
     }
 
     if (ja.isNotEmpty) {
       lastReactionTime = DateTime.now();
-      vrmController.speak(ja, english: en);
-      vrmController.setEmotion(emotion);
+      widget.onSpeak?.call(ja, english: en, emotion: emotion);
+    }
+  }
+
+  String _getPieceName(chess_pkg.Piece? piece) {
+    if (piece == null) return "Piece";
+    switch (piece.type) {
+      case chess_pkg.PieceType.PAWN:
+        return "Pawn";
+      case chess_pkg.PieceType.KNIGHT:
+        return "Knight";
+      case chess_pkg.PieceType.BISHOP:
+        return "Bishop";
+      case chess_pkg.PieceType.ROOK:
+        return "Rook";
+      case chess_pkg.PieceType.QUEEN:
+        return "Queen";
+      case chess_pkg.PieceType.KING:
+        return "King";
+      default:
+        return "Piece";
     }
   }
 
@@ -284,12 +311,12 @@ class _ChessGameState extends State<ChessGame> {
     setState(() => showSummary = true);
     if (game.in_checkmate) {
       bool userWon = game.turn == chess_pkg.Color.BLACK;
-      vrmController.setEmotion(userWon ? "sorrow" : "joy");
-      vrmController.speak(
+      widget.onSpeak?.call(
           userWon ? "負けました…。お見事です、ご主人様。" : "まいりましたか？Sakura の勝ちですね！",
           english: userWon
               ? "I lost... impressive, Master."
-              : "GG! Sakura wins this time!");
+              : "GG! Sakura wins this time!",
+          emotion: userWon ? "sorrow" : "joy");
     }
   }
 
@@ -315,7 +342,6 @@ class _ChessGameState extends State<ChessGame> {
     setState(() => isAiThinking = true);
     // Wait if she is speaking, then wait 1s thinking time
     Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (isSakuraSpeaking) return;
       timer.cancel();
 
       Future.delayed(const Duration(milliseconds: 1000), () {
@@ -382,9 +408,10 @@ class _ChessGameState extends State<ChessGame> {
     });
   }
 
-  void _triggerAiComment(dynamic move, String san) {
-    // 30% chance to comment on her own move
-    if (Random().nextDouble() > 0.3) return;
+  void _triggerAiComment(dynamic move, String san, {bool isAIMove = false}) {
+    // React more often, 80% chance for AI moves, 50% for player moves
+    double reactionChance = isAIMove ? 0.8 : 0.5;
+    if (Random().nextDouble() > reactionChance) return;
 
     final List<String> phrases = [
       "How about this?",
@@ -394,11 +421,13 @@ class _ChessGameState extends State<ChessGame> {
       "You won't like this one.",
       "Fufufu...",
       "Are you watching closely?",
+      "Sakura's specialty!",
+      "Don't blink!",
+      "Check this move~",
     ];
 
     if (san.contains('+')) {
-      vrmController.speak("王手！", english: "Check!");
-      vrmController.setEmotion("fun");
+      widget.onSpeak?.call("王手！", english: "Check!", emotion: "fun");
     } else if (san.contains('#')) {
       // Handled in _finishGame usually, but just in case
     } else {
@@ -410,10 +439,13 @@ class _ChessGameState extends State<ChessGame> {
         "これは嫌なはずですよ？",
         "ふふふっ…。",
         "よく見ててくださいね？",
+        "Sakuraの特等席ですよ！",
+        "瞬きしちゃダメですよ？",
+        "この一手、どうですか？",
       ];
       int r = Random().nextInt(jaPhrases.length);
-      vrmController.speak(jaPhrases[r], english: phrases[r]);
-      vrmController.setEmotion("neutral");
+      widget.onSpeak
+          ?.call(jaPhrases[r], english: phrases[r], emotion: "neutral");
     }
   }
 
@@ -546,25 +578,17 @@ class _ChessGameState extends State<ChessGame> {
     return CrtOverlay(
       child: Container(
         width: 1000.w,
-        height: 750.h,
+        height: 700.h,
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(16.r),
-          border:
-              Border.all(color: Colors.pinkAccent.withOpacity(0.5), width: 2),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.pinkAccent.withOpacity(0.2),
-                blurRadius: 40,
-                spreadRadius: 5)
-          ],
+          // Removed border and shadow for cleaner "Linux Box" look
         ),
         child: Stack(
           children: [
             const IgnorePointer(child: SakuraParticles()),
             Column(
               children: [
-                _buildTitleBar(),
                 Expanded(
                   child: Row(
                     children: [
@@ -579,37 +603,6 @@ class _ChessGameState extends State<ChessGame> {
             if (showSummary) _buildGameSummary(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTitleBar() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFF282A36),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.grid_4x4, color: Colors.cyanAccent),
-              SizedBox(width: 12.w),
-              Text("NEO-CHESS: TACTICAL OPS",
-                  style: GoogleFonts.vt323(
-                      color: Colors.cyanAccent,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2)),
-            ],
-          ),
-          GestureDetector(
-            onTap: widget.onClose,
-            child: Icon(Icons.close, color: Colors.white54, size: 28.sp),
-          ),
-        ],
       ),
     );
   }
@@ -649,13 +642,6 @@ class _ChessGameState extends State<ChessGame> {
                     size: 14.r,
                     color: isAI ? Colors.pinkAccent : Colors.cyanAccent),
               ),
-              SizedBox(width: 12.w),
-              Text(isAI ? "SYSTEM SAKURA" : "OPERATOR_01",
-                  style: GoogleFonts.vt323(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14.sp,
-                      letterSpacing: 1)),
               SizedBox(width: 16.w),
               ...pieces.map((p) => Padding(
                   padding: EdgeInsets.only(right: 2.w),
@@ -697,39 +683,50 @@ class _ChessGameState extends State<ChessGame> {
               bool isDark = ((index ~/ 8) + (index % 8)) % 2 != 0;
               bool isSelected = selectedIndex == index;
               bool isValid = validMoveIndices.contains(index);
+              final piece = game.get(indexToSquare(index));
+              final isWhite = piece?.color == chess_pkg.Color.WHITE;
 
               return GestureDetector(
                 onTap: () => onSquareTap(index),
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.pinkAccent.withOpacity(0.4)
+                        ? Colors.pinkAccent.withOpacity(0.3)
                         : (isDark
-                            ? const Color(0xFF1a1c2c).withOpacity(0.8)
-                            : const Color(0xFF2d314d).withOpacity(0.8)),
+                            ? const Color(0xFF1a1c2c).withOpacity(0.7)
+                            : const Color(0xFF2d314d).withOpacity(0.7)),
                     border: isSelected
                         ? Border.all(color: Colors.pinkAccent, width: 2)
-                        : null,
+                        : (isValid
+                            ? Border.all(
+                                color: Colors.cyanAccent.withOpacity(0.3))
+                            : null),
                   ),
                   child: Stack(
                     children: [
                       Center(
-                        child:
-                            _buildVectorPiece(game.get(indexToSquare(index))),
+                        child: Opacity(
+                          opacity: (game.turn == chess_pkg.Color.WHITE &&
+                                      !isWhite) ||
+                                  (game.turn == chess_pkg.Color.BLACK &&
+                                      isWhite)
+                              ? 0.8
+                              : 1.0,
+                          child: _buildVectorPiece(piece),
+                        ),
                       ),
                       if (isValid)
                         Center(
                           child: Container(
-                            width: 14.r,
-                            height: 14.r,
+                            width: 12.r,
+                            height: 12.r,
                             decoration: BoxDecoration(
-                              color: Colors.cyanAccent.withOpacity(0.6),
+                              color: Colors.cyanAccent.withOpacity(0.5),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.cyanAccent.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
+                                  blurRadius: 6,
                                 )
                               ],
                             ),
@@ -790,209 +787,76 @@ class _ChessGameState extends State<ChessGame> {
   Widget _buildSidebar() {
     return Container(
       width: 280.w,
-      padding: EdgeInsets.all(20.r),
-      color: const Color(0xFF21222C),
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E2E).withOpacity(0.9),
+        border:
+            Border(left: BorderSide(color: Colors.pinkAccent.withOpacity(0.2))),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sakura Face/Header
-          Container(
-            height: 180.h,
-            width: double.infinity,
-            padding: EdgeInsets.all(4.r),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Colors.pinkAccent.withOpacity(0.3)),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.pinkAccent.withOpacity(0.15),
-                    blurRadius: 10,
-                    spreadRadius: 1)
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4.r),
-              child: Stack(
-                children: [
-                  VrmMaidView(
-                    controller: vrmController,
-                    onSpeak: (ja, {english}) {
-                      if (mounted) {
-                        setState(() {
-                          sakuraSpeechText = english ?? ja;
-                        });
-                      }
-                    },
-                  ),
-                  if (sakuraSpeechText.isNotEmpty)
-                    Positioned(
-                      bottom: 20.h,
-                      left: 10.w,
-                      right: 10.w,
-                      child: Container(
-                        padding: EdgeInsets.all(8.r),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(4.r),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Text(
-                          sakuraSpeechText,
-                          style: GoogleFonts.notoSansJp(
-                            color: Colors.white,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 20.h),
-          Text("MISSION LOG",
-              style: GoogleFonts.vt323(
+          SizedBox(height: 10.h),
+          Text("TACTICAL DATA",
+              style: GoogleFonts.orbitron(
                   color: Colors.cyanAccent,
-                  fontSize: 12.sp,
+                  fontSize: 10.sp,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1)),
-          Divider(color: Colors.cyanAccent.withOpacity(0.2)),
-          Expanded(
-            child: ListView.builder(
-              itemCount: moveHistory.length,
-              itemBuilder: (context, index) {
-                final move = moveHistory[index];
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.h),
-                  child: Row(
-                    children: [
-                      Text("${index + 1}.",
-                          style: GoogleFonts.vt323(
-                              color: Colors.white24, fontSize: 10.sp)),
-                      SizedBox(width: 8.w),
-                      Text("${move.from} → ${move.to}",
-                          style: GoogleFonts.vt323(
-                              color: move.isAI
-                                  ? Colors.pinkAccent
-                                  : Colors.cyanAccent,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      Text(move.san,
-                          style: GoogleFonts.vt323(
-                              color: Colors.white70, fontSize: 11.sp)),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          Divider(color: Colors.cyanAccent.withOpacity(0.2)),
+                  letterSpacing: 2)),
+          SizedBox(height: 8.h),
+          _analysisBadge(),
+          SizedBox(height: 12.h),
           _buildStatRow(
               "ACCURACY", "${_calculateAccuracy()}%", Colors.greenAccent),
-          SizedBox(height: 20.h),
-          _analysisBadge(),
-          SizedBox(height: 20.h),
-          Text("DUEL LOG",
-              style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold)),
-          SizedBox(height: 10.h),
+          const Divider(color: Colors.white10),
           Expanded(
             child: ListView.builder(
               itemCount: moveHistory.length,
               itemBuilder: (context, i) {
                 final move = moveHistory[i];
                 return Container(
-                  margin: EdgeInsets.only(bottom: 8.h),
-                  padding: EdgeInsets.all(8.r),
+                  margin: EdgeInsets.only(bottom: 6.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
                   decoration: BoxDecoration(
                     color: move.isAI
                         ? Colors.pinkAccent.withOpacity(0.05)
-                        : Colors.white.withAlpha(5),
-                    borderRadius: BorderRadius.circular(8.r),
+                        : Colors.cyanAccent.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(6.r),
                     border: Border.all(
-                      color: move.isAI
-                          ? Colors.pinkAccent.withOpacity(0.2)
-                          : Colors.white10,
+                      color: (move.isAI ? Colors.pinkAccent : Colors.cyanAccent)
+                          .withOpacity(0.2),
                     ),
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 32.r,
-                        height: 32.r,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              move.isAI ? Colors.pinkAccent : Colors.blueGrey,
-                        ),
-                        child: Center(
-                          child: move.isAI
-                              ? Icon(Icons.auto_awesome,
-                                  size: 16.r, color: Colors.white)
-                              : Icon(Icons.person,
-                                  size: 16.r, color: Colors.white),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              move.isAI ? "SAKURA" : "YOU",
-                              style: TextStyle(
-                                  color: move.isAI
-                                      ? Colors.pinkAccent
-                                      : Colors.white70,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Row(
-                              children: [
-                                _buildMiniPiece(move.piece),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  "${move.from}→${move.to}",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13.sp,
-                                      fontFamily: 'JetBrains Mono'),
-                                ),
-                                if (move.san.contains('#'))
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 4.w),
-                                    child: Icon(Icons.flag,
-                                        color: Colors.redAccent, size: 14.r),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        move.san,
-                        style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.bold),
-                      ),
+                      Text("${i + 1}.",
+                          style: GoogleFonts.vt323(
+                              color: Colors.white38, fontSize: 10.sp)),
+                      SizedBox(width: 8.w),
+                      _buildMiniPiece(move.piece),
+                      SizedBox(width: 4.w),
+                      Text(move.san,
+                          style: GoogleFonts.vt323(
+                              color: Colors.white, fontSize: 12.sp)),
+                      const Spacer(),
+                      Text("${move.from}→${move.to}",
+                          style: GoogleFonts.vt323(
+                              color: Colors.white38, fontSize: 10.sp)),
                     ],
                   ),
                 );
               },
             ),
           ),
-          const Divider(color: Colors.white12, height: 40),
+          SizedBox(height: 12.h),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFBD93F9),
-                minimumSize: Size(double.infinity, 50.h)),
+                backgroundColor: Colors.transparent,
+                side: BorderSide(color: Colors.pinkAccent.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4)),
+                minimumSize: Size(double.infinity, 40.h)),
             onPressed: () => setState(() {
               game = chess_pkg.Chess();
               isGameStarted = false;
@@ -1004,9 +868,9 @@ class _ChessGameState extends State<ChessGame> {
               userBlunders = 0;
               lastMoveQuality = "";
             }),
-            child: const Text("RESET",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
+            child: Text("REBOOT ENGINE",
+                style: GoogleFonts.vt323(
+                    fontWeight: FontWeight.bold, color: Colors.pinkAccent)),
           ),
         ],
       ),

@@ -2,9 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'model/resume_generator.dart';
-import 'package:dev_icons/dev_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_test/widget/crt_overlay.dart';
 import 'package:project_test/widget/ai_chat_panel.dart';
@@ -14,26 +13,23 @@ import 'package:project_test/widget/vrm_maid_view.dart';
 import 'dart:async'; // For clock
 import 'dart:math';
 import 'dart:convert'; // jsonDecode
-import 'package:geolocator/geolocator.dart'; // Browser geolocation
-import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http; // Open-Meteo API calls
-import 'dart:js' as js;
-import 'dart:js_util' as js_util;
+import 'utils/web_utils.dart';
 import '../llm/llm_service.dart';
 import 'widget/poker.dart';
 import 'widget/chess_game.dart';
 import 'widget/discord_activity_widget.dart';
 import 'widget/premier_league_table.dart';
-import 'widget/cursor_glow.dart';
+
 import 'model/work_experience_model.dart';
 import 'model/project_model.dart';
 import 'model/cv_models.dart';
-import 'widget/crt_overlay.dart';
 import 'widget/sakura_particles.dart';
 import 'widget/spotify_player.dart';
-import 'widget/email_compose.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'widget/tech_marquee.dart';
 import 'widget/project_store.dart';
+import 'widget/vn_dialogue_bubble.dart';
 
 void main() {
   runApp(MyApp());
@@ -103,6 +99,12 @@ class _HomePageState extends State<HomePage> {
   bool _discordMinimized = true;
   String _weatherDesc = "Loading...";
   String _locationText = "Detecting...";
+
+  // Unified Dialogue State
+  String _globalDialogueJp = "";
+  String? _globalDialogueEn;
+  bool _isGlobalSpeaking = false;
+  Timer? _dialogueFadeTimer;
   int _cpuCores = 0;
   double _ramGb = 0.0;
   int _fakeCpuLoad = 35; // we'll animate it a bit
@@ -110,16 +112,14 @@ class _HomePageState extends State<HomePage> {
 
   bool _plTableMinimized = true;
   bool _showSpotify = false;
-  bool _showEmail = false;
   @override
   void initState() {
     super.initState();
     _loadRealWeather();
     _appStartTime = DateTime.now();
     _updateTime();
-    _cpuCores = js.context['navigator']['hardwareConcurrency'] ?? 4;
-    final ramStr = js.context['navigator']['deviceMemory']?.toString() ?? "8";
-    _ramGb = double.tryParse(ramStr) ?? 8.0;
+    _cpuCores = WebUtils.hardwareConcurrency;
+    _ramGb = double.tryParse(WebUtils.deviceMemory) ?? 8.0;
 // In initState(), after other timers:
     _cpuLoadTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!mounted) {
@@ -141,6 +141,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   final ScrollController _terminalScrollController = ScrollController();
+  final VrmController _vrmController = VrmController();
   void _scrollToBottom() {
     if (!_terminalScrollController.hasClients) return;
 
@@ -247,12 +248,27 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _updateGlobalDialogue(String text, {String? english, String? emotion}) {
+    _dialogueFadeTimer?.cancel();
+    setState(() {
+      _globalDialogueJp = text;
+      _globalDialogueEn = english;
+      _isGlobalSpeaking = true;
+    });
+
+    _dialogueFadeTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _isGlobalSpeaking = false);
+      }
+    });
+
+    // Also forward to VRM
+    _postMessageToVrm(text, english: english, emotion: emotion);
+  }
+
   String _getJsValue(String path) {
     try {
-      var obj = js.context;
-      for (var part in path.split('.')) {
-        obj = obj[part];
-      }
+      final obj = WebUtils.getPropertyByPath(path);
       return obj?.toString() ?? 'Unknown';
     } catch (_) {
       return 'Unavailable';
@@ -360,13 +376,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
+  Future<void> _launchEmail() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'anggagant@gmail.com',
+      query: encodeQueryParameters(<String, String>{
+        'subject': '[COLLABORATION] Project Inquiry',
+        'body':
+            'Hello Windstrom5,\n\nI saw your portfolio and would like to discuss a potential project...'
+      }),
+    );
+    if (!await launchUrl(emailLaunchUri,
+        mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $emailLaunchUri';
     }
+  }
+
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 
   Future<void> _processCommand(String rawCommand) async {
@@ -712,7 +742,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 50.w), // Balance text
+                  // Removed BACK / CLOSE Button (Traffic lights are sufficient)
                 ],
               ),
             ),
@@ -1899,82 +1929,38 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTicTacToeView() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        final vrmWidth = (maxWidth * 0.18).clamp(150.0, 200.0);
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: vrmWidth,
-                child: kIsWeb ? VrmMaidView() : const SizedBox.shrink(),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 600,
-                      maxHeight: 600,
-                    ),
-                    child: CrtOverlay(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          border: Border.all(
-                              color: Colors.cyanAccent.withOpacity(0.5),
-                              width: 2),
-                        ),
-                        child: TicTacToe(onSpeak: _postMessageToVrm),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 600,
+          maxHeight: 600,
+        ),
+        child: CrtOverlay(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: Border.all(
+                  color: Colors.cyanAccent.withOpacity(0.5), width: 2),
+            ),
+            child: TicTacToe(onSpeak: _updateGlobalDialogue),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildRpsView() {
-    return Row(
-      children: [
-        if (kIsWeb)
-          SizedBox(
-            width: 300.w,
-            height: 500.h,
-            child: VrmMaidView(),
-          ),
-        Expanded(
-          child: RockPaperScissors(onSpeak: _postMessageToVrm),
-        ),
-      ],
-    );
+    return Center(child: RockPaperScissors(onSpeak: _updateGlobalDialogue));
   }
 
   Widget _buildPokerView() {
-    return Row(
-      children: [
-        if (kIsWeb)
-          SizedBox(
-            width: 300.w,
-            height: 500.h,
-            child: VrmMaidView(),
-          ),
-        Expanded(
-          child: PokerGame(onSpeak: _postMessageToVrm),
-        ),
-      ],
-    );
+    return Center(child: PokerGame(onSpeak: _updateGlobalDialogue));
   }
 
   Widget _buildChessView() {
     return ChessGame(
       onClose: () => setState(() => _selectedIndex = -1),
+      onSpeak: _updateGlobalDialogue,
     );
   }
 
@@ -2005,116 +1991,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _postMessageToVrm(String text, {String? english}) {
+  void _postMessageToVrm(String text, {String? english, String? emotion}) {
     if (kIsWeb) {
-      try {
-        var document = js.context['document'];
-        var iframe = js_util.callMethod(
-            document, 'querySelector', ['iframe[src="vrm/index.html"]']);
-        if (iframe != null) {
-          var contentWindow = js_util.getProperty(iframe, 'contentWindow');
-          if (contentWindow != null) {
-            // Send bilingual format: Japanese for voice, English for display
-            js_util.callMethod(contentWindow, 'postMessage', [
-              js_util.jsify({
-                'type': 'speak',
-                'japanese': text,
-                'english': english ?? _translateToEnglish(text),
-              }),
-              '*'
-            ]);
-          } else {
-            print(
-                'VRM iframe contentWindow not available - voice skipped: $text');
-          }
-        } else {
-          print('VRM iframe not found - voice skipped: $text');
-        }
-      } catch (e) {
-        print('VRM postMessage error: $e - text: $text');
+      _vrmController.speak(text, english: english);
+      if (emotion != null) {
+        _vrmController.setEmotion(emotion);
       }
     }
-  }
-
-  /// Simple translation helper for common game phrases (Japanese -> English)
-  String _translateToEnglish(String japanese) {
-    // Common TicTacToe phrases
-    final translations = <String, String>{
-      // TicTacToe - Updated visitor-friendly voice lines
-      "ティックタックトーで遊ぼう！ あなたが先手でXだよ～♡":
-          "Let's play Tic-Tac-Toe! You go first with X~♡",
-      "わぁ～！ そこに置いたんだ～？♡": "Wow~! You placed it there~?♡",
-      "えへへ、Xだね～！ ドキドキする～": "Ehehe, it's an X~! So exciting~",
-      "ふふっ、次はSakuraの番だよ～！": "Fufu, it's Sakura's turn now~!",
-      "上手～！ でも負けないからねっ♡": "Nice move~! But I won't lose~♡",
-      "きゃっ、そこは危ないよ～！": "Kyaa, that spot is dangerous~!",
-      "ここに〇だよ～♡": "I'll put O here~♡",
-      "えへへ、Sakuraの〇～！": "Ehehe, Sakura's O~!",
-      "ふふっ、どうかな～？": "Fufu, how's that~?",
-      "置いちゃった～！ 見ててね♡": "I placed it~! Watch me♡",
-      "やったー！ Sakuraの勝ち～！✨": "Yay~! Sakura wins~!✨",
-      "えへへ～ 勝っちゃった♡": "Ehehe~ I won♡",
-      "キャー！ 勝っちゃったよぉ～！": "Kyaa~! I won~!",
-      "うぅ～… 強すぎるよぉ…💦": "Uuu~ You're too strong...💦",
-      "負けちゃった…でも楽しかった～♡": "I lost... but it was fun~♡",
-      "くぅ～！ 次は絶対勝つからねっ！": "Kuu~! I'll definitely win next time!",
-      "あいこだよ～！ また遊ぼうね♡": "It's a tie~! Let's play again♡",
-      "ふふっ、どっちもすごかった～！": "Fufu, we were both great~!",
-      "引き分け～！ 楽しかったよぉ～♡": "Draw~! That was fun~♡",
-      "リセットしたよ～！ また最初からだよ♡": "Reset~! Let's start again♡",
-      "もう一回遊ぼうね～！ 準備OK～！": "Let's play again~! Ready~!",
-      "えへへ、がんばろっ♡": "Ehehe, let's do our best♡",
-
-      // Rock Paper Scissors - Updated visitor-friendly voice lines
-      "じゃんけんぽんしよう～！ 最初に出してね♡": "Let's play Rock-Paper-Scissors~ Go first♡",
-      "リセットしたよ～！ またじゃんけんしよう♡": "Reset~! Let's play again♡",
-      // VRM choose templates
-      "Sakuraは…じゃんけん…Rock！": "Sakura... janken... Rock!",
-      "Sakuraは…じゃんけん…Paper！": "Sakura... janken... Paper!",
-      "Sakuraは…じゃんけん…Scissors！": "Sakura... janken... Scissors!",
-      "わぁ～！ それだね～♡": "Waa~! That's your choice~♡",
-      "えへへ、きた～！ ドキドキするよぉ": "Ehehe, here it comes~! So exciting~",
-      "ふふっ、Sakuraも負けないよ～！": "Fufu, Sakura won't lose either~!",
-      "きゃっ！ ずるい～♡": "Kyaa~! That's sneaky~♡",
-      "えへへ～ 私のはこれだよ～♡": "Ehehe~ This is mine~♡",
-      "ふふっ、で勝負だよ～！": "Fufu, let's battle~!",
-      "いくよ～！ だよっ！": "Here I go~! This is it~!",
-      // RPS specific win/lose/draw
-      "キャー！ 勝っちゃったよぉ～！ 嬉しい～！": "Kyaa~! I won~! So happy~!",
-      "うぅ～… 負けちゃった…💦": "Uuu~ I lost...💦",
-      "くぅ～！ でも楽しかったよ～♡ 次は勝つからねっ！": "Kuu~! But it was fun~♡ I'll win next time!",
-      "え～ん… 強すぎるよぉ…！": "Eh~n... You're too strong~!",
-      "あいこ～！ またやろっ♡": "Tie~! Let's play again♡",
-      "ふふっ、どっちも同じだね～！ 楽しかった～": "Fufu, we chose the same~! That was fun~",
-      "引き分けだよ～！ 同じで嬉しい♡": "It's a draw~! Happy we matched♡",
-
-      // Poker - Updated visitor-friendly voice lines
-      "ポーカー始めよ～！ カード配るね♡": "Let's start Poker~! Dealing cards♡",
-      "えへへ、ドキドキする～！ がんばって！": "Ehehe, so exciting~! Do your best!",
-      "ふふっ、Sakura強いよ～？ 負けないからねっ♡": "Fufu, Sakura is strong~? I won't lose~♡",
-      "ここ raise よ～！ どう？♡": "I'm raising here~! How about that?♡",
-      "えへへ、bet up～！ あなたの番だよ～": "Ehehe, bet up~! Your turn~",
-      "ふふっ、強い手かも～？  raise！": "Fufu, maybe a strong hand~? Raise!",
-      "call するよ～♡": "I'll call~♡",
-      "ふふっ、OK～！ 次行こっ": "Fufu, OK~! Let's go next",
-      "えへへ、call！ ドキドキ～": "Ehehe, call! So exciting~",
-      "check だよ～♡": "Check~♡",
-      "ふふっ、check！ どうぞ～": "Fufu, check! Your turn~",
-      "うぅ～ fold… 勝っちゃった♡": "Uuu~ fold... You won♡",
-      "くぅ～ 次は勝つよぉ～！": "Kuu~ I'll win next time~!",
-      "fold したの？ Sakuraの勝ち～♡": "You folded? Sakura wins~♡",
-      "キャー！ 嬉しいよぉ～！": "Kyaa~! I'm so happy~!",
-      "split pot だよ～！ ふふっ、平等ね♡": "Split pot~! Fufu, it's fair♡",
-      "あいこ～！ また遊ぼう～": "Tie~! Let's play again~",
-      "flop きたよ～！ どうかな♡": "The flop is here~! How is it?♡",
-      "えへへ、board オープン～！": "Ehehe, board revealed~!",
-      "turn だよ～♡ ドキドキ～": "It's the turn~♡ So exciting~",
-      "ふふっ、次の一枚～！": "Fufu, the next card~!",
-      "river よ～！ 最終だね♡": "The river~! This is the final one♡",
-      "えへへ、これで決まるよ～！": "Ehehe, this will decide it~!",
-    };
-
-    return translations[japanese] ?? japanese;
   }
 
   // ==========================================
@@ -2143,7 +2026,7 @@ class _HomePageState extends State<HomePage> {
           _dockIcon(0, FontAwesomeIcons.terminal, "Terminal"),
           SizedBox(width: 16.w),
           GestureDetector(
-            onTap: () => setState(() => _showEmail = !_showEmail),
+            onTap: _launchEmail,
             child: Tooltip(
               message: "Email",
               child: Icon(Icons.email, color: Colors.white, size: 24.r),
@@ -2165,6 +2048,7 @@ class _HomePageState extends State<HomePage> {
           int prev = _selectedIndex;
           setState(() {
             _selectedIndex = index;
+            _triggerPersonalizedReaction(tooltip, index);
             if (index == 0 && prev != 0) {
               additionalTerminalOutput.clear();
               _showHelp();
@@ -2199,13 +2083,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _linkIcon(IconData icon, String url) {
-    return GestureDetector(
-      onTap: () => _launchURL(url),
-      child: Icon(icon, color: Colors.white, size: 24.r),
-    );
-  }
-
   Widget _desktopShortcut(int? index, IconData icon, String label,
       {VoidCallback? onTap}) {
     return GestureDetector(
@@ -2214,6 +2091,7 @@ class _HomePageState extends State<HomePage> {
               int prev = _selectedIndex;
               setState(() {
                 _selectedIndex = index!;
+                _triggerPersonalizedReaction(label, index);
                 if (index == 0 && prev != 0) {
                   additionalTerminalOutput.clear();
                   _showHelp();
@@ -2239,13 +2117,81 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Timer? _idleTimer;
+
+  // Idle Logic
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(const Duration(seconds: 20), _triggerIdleAction);
+  }
+
+  void _triggerIdleAction() {
+    if (!mounted || _isGlobalSpeaking) return;
+
+    // Resume Context Quips
+    final osQuips = [
+      "Master, checking the system logs... all clear! ♡",
+      "Do you need me to open a project for you?",
+      "I'm keeping an eye on the server status, don't worry!",
+      "Master Angga, remember to stay hydrated while coding!",
+      "Waiting for your next command, Master...",
+      "Everything is running smoothly! ~",
+      "Hehe~ This OS is really fast, isn't it?",
+    ];
+
+    final r = Random().nextInt(osQuips.length);
+    _vrmController.speak(osQuips[r]);
+  }
+
+  // Head Tracking
+  void _onHover(PointerEvent details) {
+    if (!kIsWeb) return;
+
+    final size = MediaQuery.of(context).size;
+    double normX = (details.position.dx / size.width) * 2 - 1;
+    // Fix: Remove inversion to look UP when mouse is UP
+    double normY = (details.position.dy / size.height) * 2 - 1;
+
+    _vrmController.lookAt(normX, normY);
+    _resetIdleTimer();
+  }
+
+  void _triggerPersonalizedReaction(String label, int index) {
+    String message = "Opening $label for you, Master! ♡";
+    String emotion = 'fun';
+
+    if (label.contains("Experience")) {
+      message = "Here is for showcase what experience Master Angga have! ~";
+      emotion = 'joy';
+    } else if (label.contains("Projects")) {
+      message = "Check out Master Angga's creative works! ♡";
+      emotion = 'fun';
+    } else if (label.contains("Education")) {
+      message = "Master is very studious! Here's his academic journey.";
+      emotion = 'joy';
+    } else if (label.contains("Poker") ||
+        label.contains("TicTacToe") ||
+        label.contains("RPS")) {
+      message = "Ready to lose to me? Fufufu~ Let's play!";
+      emotion = 'fun';
+    }
+    //else if (label == "Spotify") {
+    //   message = "Let's listen to some music together, Master! ♪";
+    //   emotion = 'joy';
+    // }
+
+    _vrmController.speak(message, emotion: emotion);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Scaffold(
-      body: CursorGlow(
-        child: Stack(
+    return MouseRegion(
+      onHover: _onHover,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
           children: [
             // 1. Background Image
             Container(
@@ -2262,78 +2208,106 @@ class _HomePageState extends State<HomePage> {
               child: IgnorePointer(child: SakuraParticles()),
             ),
 
-            // 2. Desktop Shortcuts (Hidden on mobile for cleaner HUD)
-            if (!isMobile)
+            // 3. VRM Holo-Pod Container (Static Position for Stability)
+            if (kIsWeb)
               Positioned(
+                key: const ValueKey('vrm-pod'),
+                bottom: 20.h,
                 left: 20.w,
-                top: 50.h,
-                bottom: 110.h,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    double iconWidth = 100.w;
-                    double iconHeight = 110.h;
-                    double columnSpacing = 20.w;
-                    int iconsPerColumn =
-                        (constraints.maxHeight / iconHeight).floor();
-
-                    if (iconsPerColumn == 0) iconsPerColumn = 1;
-
-                    List<Widget> shortcuts = [
-                      _desktopShortcut(
-                          0, FontAwesomeIcons.terminal, "Terminal"),
-                      _desktopShortcut(
-                          1, FontAwesomeIcons.briefcase, "Projects"),
-                      _desktopShortcut(
-                          3, FontAwesomeIcons.graduationCap, "Education"),
-                      _desktopShortcut(
-                          5, FontAwesomeIcons.briefcase, "Experience"),
-                      _desktopShortcut(
-                          6, FontAwesomeIcons.gamepad, "TicTacToe"),
-                      _desktopShortcut(7, FontAwesomeIcons.dice, "RPS"),
-                      _desktopShortcut(8, FontAwesomeIcons.diamond, "Poker"),
-                      _desktopShortcut(9, FontAwesomeIcons.chess, "Chess"),
-                      _desktopShortcut(
-                          null, FontAwesomeIcons.robot, "Assistant",
-                          onTap: openAiChat),
-                      _desktopShortcut(
-                          null, FontAwesomeIcons.spotify, "Spotify",
-                          onTap: () =>
-                              setState(() => _showSpotify = !_showSpotify)),
-                    ];
-
-                    List<Widget> columns = [];
-                    for (int i = 0; i < shortcuts.length; i += iconsPerColumn) {
-                      List<Widget> columnItems = [];
-                      for (int j = i;
-                          j < i + iconsPerColumn && j < shortcuts.length;
-                          j++) {
-                        columnItems.add(
-                          SizedBox(
-                            width: iconWidth,
-                            height: iconHeight,
-                            child: Center(child: shortcuts[j]),
+                width: 300.w,
+                height: 400.h,
+                child: IgnorePointer(
+                  ignoring: true,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Container(
+                        width: 280.w,
+                        height: 350.h,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                                color: Colors.cyanAccent.withOpacity(0.5),
+                                width: 2),
+                            left: BorderSide(
+                                color: Colors.cyanAccent.withOpacity(0.3),
+                                width: 1),
+                            right: BorderSide(
+                                color: Colors.cyanAccent.withOpacity(0.3),
+                                width: 1),
                           ),
-                        );
-                      }
-                      columns.add(
-                        SizedBox(
-                          width: iconWidth + columnSpacing,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: columnItems,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.cyanAccent.withOpacity(0.05),
+                            ],
                           ),
                         ),
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: columns,
-                    );
-                  },
+                      ),
+                      Positioned(
+                          bottom: 0,
+                          left: -20,
+                          right: -20,
+                          top: 0,
+                          child: VrmMaidView(
+                            controller: _vrmController,
+                            onReady: () {
+                              _vrmController.speak(
+                                  "System initialized. Welcome back, Master! ♡",
+                                  emotion: 'joy');
+                            },
+                          )),
+                    ],
+                  ),
                 ),
               ),
+
+            // 4. Desktop Shortcuts (Dynamic Vertical Wrap - PERSISTENT)
+            Positioned(
+              top: 40.h,
+              left: 20.w,
+              bottom: 420.h,
+              child: SizedBox(
+                width: 500.w,
+                child: Builder(builder: (context) {
+                  double iconWidth = 80.w;
+                  double iconHeight = 90.h;
+
+                  List<Widget> shortcuts = [
+                    _desktopShortcut(0, FontAwesomeIcons.terminal, "Terminal"),
+                    _desktopShortcut(1, FontAwesomeIcons.briefcase, "Projects"),
+                    _desktopShortcut(
+                        3, FontAwesomeIcons.graduationCap, "Education"),
+                    _desktopShortcut(
+                        5, FontAwesomeIcons.briefcase, "Experience"),
+                    _desktopShortcut(6, FontAwesomeIcons.gamepad, "TicTacToe"),
+                    _desktopShortcut(7, FontAwesomeIcons.dice, "RPS"),
+                    _desktopShortcut(8, FontAwesomeIcons.diamond, "Poker"),
+                    _desktopShortcut(9, FontAwesomeIcons.chess, "Chess"),
+                    _desktopShortcut(null, FontAwesomeIcons.robot, "Assistant",
+                        onTap: openAiChat),
+                    // _desktopShortcut(null, FontAwesomeIcons.spotify, "Spotify",
+                    //     onTap: () =>
+                    //         setState(() => _showSpotify = !_showSpotify)),
+                  ];
+
+                  return Wrap(
+                    direction: Axis.vertical,
+                    spacing: 10.h,
+                    runSpacing: 20.w,
+                    children: shortcuts
+                        .map((w) => SizedBox(
+                              width: iconWidth,
+                              height: iconHeight,
+                              child: Center(child: w),
+                            ))
+                        .toList(),
+                  );
+                }),
+              ),
+            ),
 
             // 4. Right-Side Widgets (Discord + Football Table) - Hidden on mobile
             if (!isMobile)
@@ -2419,17 +2393,18 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 6. Main Window Content - Adaptive Positioning
-            Positioned(
-              top: 40.h,
-              bottom: isMobile ? 120.h : 100.h,
-              left: isMobile ? 10.w : 120.w,
-              right: isMobile ? 10.w : 300.w,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _buildBodyContent(),
+            // 6. Main Window Content - PUSHED RIGHT to avoid VRM
+            if (_selectedIndex != -1)
+              Positioned(
+                top: 40.h,
+                bottom: isMobile ? 120.h : 100.h,
+                left: isMobile ? 10.w : 350.w, // Offset for VRM + Shortcuts
+                right: isMobile ? 10.w : 300.w,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildBodyContent(),
+                ),
               ),
-            ),
 
             // 7. Integrated Tech Marquee + Dock - REACTIVE
             Positioned(
@@ -2440,23 +2415,27 @@ class _HomePageState extends State<HomePage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Left Marquee
+                  // Left Marquee - Offset for VRM Box
                   Expanded(
-                    child: ShaderMask(
-                      shaderCallback: (Rect bounds) {
-                        return const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Colors.white,
-                            Colors.white,
-                            Colors.transparent
-                          ],
-                          stops: [0.0, 0.7, 1.0],
-                        ).createShader(bounds);
-                      },
-                      blendMode: BlendMode.dstIn,
-                      child: const TechStackMarquee(),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          left: isMobile ? 0 : 320.w), // Clear VRM Box
+                      child: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.white,
+                              Colors.white,
+                              Colors.transparent
+                            ],
+                            stops: [0.0, 0.7, 1.0],
+                          ).createShader(bounds);
+                        },
+                        blendMode: BlendMode.dstIn,
+                        child: const TechStackMarquee(),
+                      ),
                     ),
                   ),
 
@@ -2489,24 +2468,34 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 9. Spotify Player overlay
-            if (_showSpotify)
+            // 8. Global Character Dialogue - Unified
+            // 8. Global Character Dialogue - Unified
+
+            // Dialogue Bubble - Positioned above Holo-Pod
+            // Dialogue Bubble - Positioned above Holo-Pod
+            // Only show on Desktop to avoid redundancy with game dialogues
+            if (_isGlobalSpeaking && _selectedIndex == -1)
               Positioned(
-                left: 50.w,
-                bottom: 110.h,
-                child: SpotifyPlayer(
-                  playlistId: '37i9dQZF1DX4sWSpwq3LiO',
-                  onClose: () => setState(() => _showSpotify = false),
+                bottom: 420.h, // Just above the 400.h Holo-Pod
+                left: 40.w,
+                width: 400.w,
+                child: VnDialogueBubble(
+                  text: _globalDialogueEn ?? "",
+                  subtitle: _globalDialogueJp,
+                  isSpeaking: _isGlobalSpeaking,
                 ),
               ),
 
-            // 10. Email Compose overlay
-            if (_showEmail)
-              Center(
-                child: EmailComposeWindow(
-                  onClose: () => setState(() => _showEmail = false),
-                ),
-              ),
+            // 9. Spotify Player overlay
+            // if (_showSpotify)
+            //   Positioned(
+            //     left: 50.w,
+            //     bottom: 110.h,
+            //     child: SpotifyPlayer(
+            //       playlistId: '37i9dQZF1DX4sWSpwq3LiO',
+            //       onClose: () => setState(() => _showSpotify = false),
+            //     ),
+            //   ),
 
             // 11. CRT Overlay (subtle retro scanlines)
             const Positioned.fill(
@@ -2555,7 +2544,7 @@ class _BlinkCursorState extends State<BlinkCursor>
 // ... (keep all your previous imports and code up to TicTacToe class)
 
 class TicTacToe extends StatefulWidget {
-  final Function(String) onSpeak;
+  final Function(String, {String? english, String? emotion}) onSpeak;
 
   const TicTacToe({super.key, required this.onSpeak});
 
@@ -2568,19 +2557,27 @@ class _TicTacToeState extends State<TicTacToe> {
   bool playerTurn = true;
   String winner = '';
   bool isSpeaking = false;
+  String currentDialogueJp = "";
+  String? currentDialogueEn;
 
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(milliseconds: 500), () {
-      _safeSpeak("ティックタックトーで遊ぼう！ あなたが先手でXだよ～♡");
+      _safeSpeak("ティックタックトーで遊ぼう！ あなたが先手でXだよ～♡",
+          english: "Let's play Tic-Tac-Toe! You go first with X~♡");
     });
   }
 
-  void _safeSpeak(String text) {
+  void _safeSpeak(String text, {String? english, String? emotion}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        widget.onSpeak(text);
+        setState(() {
+          currentDialogueJp = text;
+          currentDialogueEn = english;
+          isSpeaking = true;
+        });
+        widget.onSpeak(text, english: english, emotion: emotion);
       }
     });
   }
@@ -2593,6 +2590,21 @@ class _TicTacToeState extends State<TicTacToe> {
     });
     _checkWinner();
     if (winner == '') {
+      List<String> moveQuips = [
+        "そこに来たか～！",
+        "ふふっ、いい場所だね！",
+        "Sakuraを止められるかな？♡",
+        "そこは予想外だよ～！",
+      ];
+      List<String> moveEng = [
+        "So you chose there~!",
+        "Fufu, good placement!",
+        "Can you block Sakura?♡",
+        "That was unexpected~!",
+      ];
+      int idx = Random().nextInt(moveQuips.length);
+      _safeSpeak(moveQuips[idx], english: moveEng[idx], emotion: "fun");
+
       Future.delayed(const Duration(milliseconds: 600), _vrmMove);
     }
   }
@@ -2602,6 +2614,21 @@ class _TicTacToeState extends State<TicTacToe> {
     List<int> empty = [];
     for (int i = 0; i < 9; i++) if (board[i] == '') empty.add(i);
     if (empty.isNotEmpty) {
+      List<String> tapQuips = [
+        "ふふっ、そこなの？♡",
+        "えいっ！ ここだよ～！",
+        "負けないもんっ！",
+        "Sakuraの番だね！"
+      ];
+      List<String> tapEng = [
+        "Fufu, you chose there?♡",
+        "Take that! Here I go~!",
+        "I won't lose!",
+        "My turn now!"
+      ];
+      int tidx = Random().nextInt(tapQuips.length);
+      _safeSpeak(tapQuips[tidx], english: tapEng[tidx], emotion: "fun");
+
       setState(() {
         board[empty[Random().nextInt(empty.length)]] = 'O';
         playerTurn = true;
@@ -2626,11 +2653,20 @@ class _TicTacToeState extends State<TicTacToe> {
           board[line[0]] == board[line[1]] &&
           board[line[0]] == board[line[2]]) {
         setState(() => winner = board[line[0]]);
+        if (winner == 'X') {
+          _safeSpeak("うぅ～… 負けちゃった…💦",
+              english: "Uuu~ I lost...💦", emotion: "sorrow");
+        } else if (winner == 'O') {
+          _safeSpeak("キャー！ 勝っちゃったよぉ～！",
+              english: "Kyaa~! I won~!", emotion: "joy");
+        }
         return;
       }
     }
     if (!board.contains('')) {
       setState(() => winner = 'Draw');
+      _safeSpeak("引き分け～！ 楽しかったよぉ～♡",
+          english: "Draw~! That was fun~♡", emotion: "fun");
     }
   }
 
@@ -2669,66 +2705,180 @@ class _TicTacToeState extends State<TicTacToe> {
     return CrtOverlay(
       child: Center(
         child: Container(
-          padding: const EdgeInsets.all(24),
+          constraints: BoxConstraints(maxWidth: 500.w, maxHeight: 700.h),
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Colors.black.withOpacity(0.8),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 2),
+            border: Border.all(
+                color: Colors.cyanAccent.withOpacity(0.3), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.cyanAccent.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 2,
+              )
+            ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("RETRO TACTICS",
-                  style:
-                      GoogleFonts.vt323(color: Colors.white, fontSize: 32.sp)),
-              SizedBox(height: 20.h),
-              SizedBox(
-                width: 300.w,
-                height: 300.w,
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10),
-                  itemCount: 9,
-                  itemBuilder: (ctx, i) => GestureDetector(
-                    onTap: () => _playerTap(i),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(
-                            color: board[i] == ''
-                                ? Colors.white12
-                                : (board[i] == 'X'
-                                    ? Colors.cyanAccent
-                                    : Colors.pinkAccent),
-                            width: 2),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                // Glassmorphism background
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF1A1A2E).withOpacity(0.6),
+                          const Color(0xFF16213E).withOpacity(0.6),
+                        ],
                       ),
-                      child: Center(
-                          child: Text(board[i],
-                              style: GoogleFonts.vt323(
-                                  color: board[i] == 'X'
-                                      ? Colors.cyanAccent
-                                      : Colors.pinkAccent,
-                                  fontSize: 40.sp))),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                  winner == ''
-                      ? (playerTurn ? "YOUR TURN" : "SAKURA THINKING")
-                      : (winner == 'Draw' ? "TIE" : "$winner WINS"),
-                  style:
-                      GoogleFonts.vt323(color: Colors.white, fontSize: 24.sp)),
-              SizedBox(height: 20.h),
-              _buildArcadeButton(
-                  onPressed: _reset,
-                  label: "RESET",
-                  color: Colors.purpleAccent),
-            ],
+                // Grid and Content
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20.h),
+                      Text("NEON TACTICS",
+                          style: GoogleFonts.orbitron(
+                            color: Colors.cyanAccent,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                            shadows: [
+                              Shadow(
+                                  color: Colors.cyanAccent.withOpacity(0.8),
+                                  blurRadius: 10),
+                            ],
+                          )),
+                      SizedBox(height: 10.h),
+                      Container(
+                        height: 2,
+                        width: 100.w,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              Colors.cyanAccent,
+                              Colors.transparent
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // Animated Grid
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: SizedBox(
+                          width: 280.w,
+                          height: 280.w,
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12),
+                            itemCount: 9,
+                            itemBuilder: (ctx, i) => GestureDetector(
+                              onTap: () => _playerTap(i),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                decoration: BoxDecoration(
+                                  color: board[i] == ''
+                                      ? Colors.white.withOpacity(0.03)
+                                      : (board[i] == 'X'
+                                          ? Colors.cyanAccent.withOpacity(0.1)
+                                          : Colors.pinkAccent.withOpacity(0.1)),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: board[i] == ''
+                                          ? Colors.white10
+                                          : (board[i] == 'X'
+                                              ? Colors.cyanAccent
+                                              : Colors.pinkAccent),
+                                      width: 1.5),
+                                  boxShadow: board[i] == ''
+                                      ? []
+                                      : [
+                                          BoxShadow(
+                                            color: (board[i] == 'X'
+                                                    ? Colors.cyanAccent
+                                                    : Colors.pinkAccent)
+                                                .withOpacity(0.3),
+                                            blurRadius: 8,
+                                          )
+                                        ],
+                                ),
+                                child: Center(
+                                    child: AnimatedScale(
+                                  duration: const Duration(milliseconds: 200),
+                                  scale: board[i] == '' ? 0.0 : 1.0,
+                                  child: Text(board[i],
+                                      style: GoogleFonts.pressStart2p(
+                                          color: board[i] == 'X'
+                                              ? Colors.cyanAccent
+                                              : Colors.pinkAccent,
+                                          fontSize: 28.sp,
+                                          shadows: [
+                                            Shadow(
+                                                color: (board[i] == 'X'
+                                                    ? Colors.cyanAccent
+                                                    : Colors.pinkAccent),
+                                                blurRadius: 10),
+                                          ])),
+                                )),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (winner != '')
+                        _buildArcadeButton(
+                            onPressed: _reset,
+                            label: "REBOOT MATCH",
+                            color: Colors.pinkAccent)
+                      else
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 8.h),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: playerTurn
+                                    ? Colors.cyanAccent.withOpacity(0.5)
+                                    : Colors.pinkAccent.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            playerTurn
+                                ? "SYSTEM READY: PLAYER X"
+                                : "UPLOADING: SAKURA O...",
+                            style: GoogleFonts.vt323(
+                              color: playerTurn
+                                  ? Colors.cyanAccent
+                                  : Colors.pinkAccent,
+                              fontSize: 14.sp,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -2737,7 +2887,7 @@ class _TicTacToeState extends State<TicTacToe> {
 }
 
 class RockPaperScissors extends StatefulWidget {
-  final Function(String) onSpeak;
+  final Function(String, {String? english, String? emotion}) onSpeak;
   const RockPaperScissors({super.key, required this.onSpeak});
   @override
   _RockPaperScissorsState createState() => _RockPaperScissorsState();
@@ -2754,9 +2904,9 @@ class _RockPaperScissorsState extends State<RockPaperScissors> {
     super.initState();
   }
 
-  void _safeSpeak(String text) {
+  void _safeSpeak(String text, {String? english, String? emotion}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onSpeak(text);
+      if (mounted) widget.onSpeak(text, english: english, emotion: emotion);
     });
   }
 
@@ -2766,17 +2916,26 @@ class _RockPaperScissorsState extends State<RockPaperScissors> {
       playerChoice = choice;
       isAnimating = true;
     });
+    _safeSpeak("いくよ～！ せーのっ！",
+        english: "Here we go! Ready... set...", emotion: "fun");
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
       vrmChoice = ['ROCK', 'PAPER', 'SCISSORS'][Random().nextInt(3)];
-      if (playerChoice == vrmChoice)
+      if (playerChoice == vrmChoice) {
         result = 'Draw';
-      else if ((playerChoice == 'ROCK' && vrmChoice == 'SCISSORS') ||
+        _safeSpeak("あいこ～！ またやろっ♡",
+            english: "Tie~! Let's play again♡", emotion: "fun");
+      } else if ((playerChoice == 'ROCK' && vrmChoice == 'SCISSORS') ||
           (playerChoice == 'PAPER' && vrmChoice == 'ROCK') ||
-          (playerChoice == 'SCISSORS' && vrmChoice == 'PAPER'))
+          (playerChoice == 'SCISSORS' && vrmChoice == 'PAPER')) {
         result = 'You Win!';
-      else
+        _safeSpeak("うぅ～… 負けちゃった…💦",
+            english: "Uuu~ I lost...💦", emotion: "sorrow");
+      } else {
         result = 'Sakura Wins!';
+        _safeSpeak("キャー！ 勝っちゃったよぉ～！ 嬉しい～！",
+            english: "Kyaa~! I won~! So happy~!", emotion: "joy");
+      }
       setState(() => isAnimating = false);
     });
   }
@@ -2850,61 +3009,63 @@ class _RockPaperScissorsState extends State<RockPaperScissors> {
   Widget build(BuildContext context) {
     return CrtOverlay(
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("NEO-DUEL",
-                  style:
-                      GoogleFonts.vt323(color: Colors.white, fontSize: 32.sp)),
-              SizedBox(height: 20.h),
-              if (result != '')
-                Text(result.toUpperCase(),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                  color: Colors.cyanAccent.withOpacity(0.5), width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("NEO-DUEL",
                     style: GoogleFonts.vt323(
-                        color: Colors.yellowAccent, fontSize: 28.sp)),
-              SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildChoiceCard("YOU", playerChoice, Colors.cyanAccent),
-                  SizedBox(width: 40.w),
-                  _buildChoiceCard("SAKURA", vrmChoice, Colors.pinkAccent),
-                ],
-              ),
-              SizedBox(height: 30.h),
-              if (playerChoice == '')
+                        color: Colors.white, fontSize: 32.sp)),
+                SizedBox(height: 20.h),
+                if (result != '')
+                  Text(result.toUpperCase(),
+                      style: GoogleFonts.vt323(
+                          color: Colors.yellowAccent, fontSize: 28.sp)),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildArcadeButton(
-                        onPressed: () => _play('ROCK'),
-                        label: "ROCK",
-                        color: Colors.cyanAccent),
-                    SizedBox(width: 12.w),
-                    _buildArcadeButton(
-                        onPressed: () => _play('PAPER'),
-                        label: "PAPER",
-                        color: Colors.cyanAccent),
-                    SizedBox(width: 12.w),
-                    _buildArcadeButton(
-                        onPressed: () => _play('SCISSORS'),
-                        label: "SCISSORS",
-                        color: Colors.cyanAccent),
+                    _buildChoiceCard("YOU", playerChoice, Colors.cyanAccent),
+                    SizedBox(width: 40.w),
+                    _buildChoiceCard("SAKURA", vrmChoice, Colors.pinkAccent),
                   ],
-                )
-              else
-                _buildArcadeButton(
-                    onPressed: _reset,
-                    label: "DUEL AGAIN",
-                    color: Colors.purpleAccent),
-            ],
+                ),
+                SizedBox(height: 30.h),
+                if (playerChoice == '')
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildArcadeButton(
+                          onPressed: () => _play('ROCK'),
+                          label: "ROCK",
+                          color: Colors.cyanAccent),
+                      SizedBox(width: 12.w),
+                      _buildArcadeButton(
+                          onPressed: () => _play('PAPER'),
+                          label: "PAPER",
+                          color: Colors.cyanAccent),
+                      SizedBox(width: 12.w),
+                      _buildArcadeButton(
+                          onPressed: () => _play('SCISSORS'),
+                          label: "SCISSORS",
+                          color: Colors.cyanAccent),
+                    ],
+                  )
+                else
+                  _buildArcadeButton(
+                      onPressed: _reset,
+                      label: "DUEL AGAIN",
+                      color: Colors.purpleAccent),
+              ],
+            ),
           ),
         ),
       ),

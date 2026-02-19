@@ -1,4 +1,5 @@
-import 'dart:js_util' as js;
+import '../utils/web_utils.dart';
+import '../model/chat_message.dart';
 import '../resume_context.dart';
 
 class LlmService {
@@ -9,18 +10,17 @@ class LlmService {
     if (_ready || _initializing) return;
     _initializing = true;
 
-    while (!js.hasProperty(js.globalThis, 'initLLM')) {
+    while (!WebUtils.hasProperty(WebUtils.jsContext, 'initLLM')) {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
     if (onProgress != null) {
-      js.callMethod(js.globalThis, 'setLLMLoadingCallback', [
-        js.allowInterop((int p) => onProgress(p))
-      ]);
+      WebUtils.callMethod(WebUtils.jsContext, 'setLLMLoadingCallback',
+          [WebUtils.allowInterop((int p) => onProgress(p))]);
     }
 
-    await js.promiseToFuture(
-      js.callMethod(js.globalThis, 'initLLM', [resumeContext]),
+    await WebUtils.promiseToFuture(
+      WebUtils.callMethod(WebUtils.jsContext, 'initLLM', [resumeContext]),
     );
 
     _ready = true;
@@ -28,10 +28,31 @@ class LlmService {
   }
 
   static Future<String> ask(String prompt) async {
-    await init(null); // auto-init safety, but progress won't show unless provided
+    await init(
+        null); // auto-init safety, but progress won't show unless provided
 
-    final res = await js.promiseToFuture(
-      js.callMethod(js.globalThis, 'askLLM', [prompt]),
+    final res = await WebUtils.promiseToFuture(
+      WebUtils.callMethod(WebUtils.jsContext, 'askLLM', [prompt]),
+    );
+
+    return res.toString();
+  }
+
+  static Future<String> getLlmResponse(List<dynamic> history) async {
+    await init(null);
+    // Convert history to list of maps for JS
+    final historyList = history
+        .map((m) => {
+              'role': m.role == MessageRole.user ? 'user' : 'model',
+              'parts': [
+                {'text': m.text}
+              ],
+            })
+        .toList();
+
+    final res = await WebUtils.promiseToFuture(
+      WebUtils.callMethod(
+          WebUtils.jsContext, 'askLLMWithHistory', [historyList]),
     );
 
     return res.toString();

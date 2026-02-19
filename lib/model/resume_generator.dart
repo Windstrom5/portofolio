@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'dart:html' as html;
+import '../utils/web_utils.dart';
 import 'project_model.dart';
 import 'work_experience_model.dart';
 import 'cv_models.dart';
@@ -544,15 +544,6 @@ class ResumePdf {
   }
 
   Future<void> downloadPdfWeb(Uint8List pdfBytes, String filename) async {
-    final blob = html.Blob([pdfBytes], 'application/pdf');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement()
-      ..href = url
-      ..style.display = 'none'
-      ..download = filename;
-    html.document.body!.append(anchor);
-    anchor.click();
-    anchor.remove();
-    html.Url.revokeObjectUrl(url);
+    WebUtils.downloadFile(pdfBytes, filename, 'application/pdf');
   }
 }

@@ -1,7 +1,5 @@
-import 'dart:html' as html;
-import 'dart:ui_web' as ui;
 import 'package:flutter/widgets.dart';
-import 'dart:js' as js;
+import '../utils/web_utils.dart';
 
 class VrmController {
   _VrmMaidViewState? _state;
@@ -18,12 +16,16 @@ class VrmController {
     _state = null;
   }
 
-  void speak(String text, {String? english}) {
-    _state?.speak(text, english: english);
+  void speak(String text, {String? english, String? emotion}) {
+    _state?.speak(text, english: english, emotion: emotion);
   }
 
   void setEmotion(String emotion) {
     _state?.setEmotion(emotion);
+  }
+
+  void lookAt(double x, double y) {
+    _state?.lookAt(x, y);
   }
 }
 
@@ -44,7 +46,7 @@ class VrmMaidView extends StatefulWidget {
 }
 
 class _VrmMaidViewState extends State<VrmMaidView> {
-  html.IFrameElement? _iframe;
+  dynamic _iframe;
   bool _isReady = false;
   final List<Map<String, dynamic>> _pendingMessages = [];
 
@@ -53,46 +55,55 @@ class _VrmMaidViewState extends State<VrmMaidView> {
     super.initState();
     widget.controller?.attach(this);
 
-    // Register unique factory (Flutter will give each instance its own viewId)
-    ui.platformViewRegistry.registerViewFactory(
+    // Register unique factory
+    WebUtils.registerViewFactory(
       'vrm-maid-${hashCode}',
-      (int viewId) {
-        final iframe = html.IFrameElement()
-          ..src = 'vrm/index.html'
-          ..style.border = 'none'
-          ..style.width = '100%'
-          ..style.height = '100%'
-          ..allow = 'autoplay';
+      (int viewId, {Object? params}) {
+        final iframe = WebUtils.createIFrameElement(
+          src: 'vrm/index.html',
+          border: 'none',
+          width: '100%',
+          height: '100%',
+          allow: 'autoplay',
+        );
 
-        _iframe = iframe; // Store reference
-
-        iframe.onLoad.listen((_) {
-          // Optional: you can try to detect load here too
-        });
+        _iframe = iframe;
         return iframe;
       },
     );
 
-    html.window.addEventListener('message', js.allowInterop((event) {
-      final e = event as html.MessageEvent;
-      final data = e.data;
-      if (data is Map) {
-        if (data['type'] == 'vrm_ready') {
+    WebUtils.addWindowEventListener('message', (event) {
+      try {
+        final data = WebUtils.getProperty(event, 'data');
+        if (data == null) return;
+
+        // Extract type and other fields using WebUtils to handle JS/Dart types
+        String? type;
+        if (data is Map) {
+          type = data['type'];
+        } else {
+          try {
+            type = WebUtils.getProperty(data, 'type')?.toString();
+          } catch (_) {}
+        }
+
+        if (type == 'vrm_ready') {
           if (mounted) {
-            print(
-                "VRM: Ready received for viewId \$${hashCode}"); // Escaped dollar sign
+            print("VRM: Ready received for viewId ${hashCode}");
             setState(() => _isReady = true);
             _flushQueue();
             widget.onReady?.call();
             widget.controller?.onReady?.call();
           }
-        } else if (data['type'] == 'speechStart') {
+        } else if (type == 'speechStart') {
           widget.controller?.onSpeechStart?.call();
-        } else if (data['type'] == 'speechEnd') {
+        } else if (type == 'speechEnd') {
           widget.controller?.onSpeechEnd?.call();
         }
+      } catch (e) {
+        // Silently fail for non-matching messages
       }
-    }));
+    });
   }
 
   @override
@@ -102,7 +113,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
   }
 
   void _flushQueue() {
-    if (!_isReady || _iframe == null || _iframe!.contentWindow == null) return;
+    if (!_isReady || _iframe == null) return;
 
     for (final msg in _pendingMessages) {
       _postMessage(msg);
@@ -110,7 +121,10 @@ class _VrmMaidViewState extends State<VrmMaidView> {
     _pendingMessages.clear();
   }
 
-  void speak(String text, {String? english}) {
+  void speak(String text, {String? english, String? emotion}) {
+    if (emotion != null) {
+      setEmotion(emotion);
+    }
     final msg = english != null
         ? {'type': 'speak', 'japanese': text, 'english': english}
         : {'type': 'speak', 'text': text};
@@ -132,10 +146,22 @@ class _VrmMaidViewState extends State<VrmMaidView> {
     }
   }
 
+  void lookAt(double x, double y) {
+    // x, y should be normalized -1.0 to 1.0
+    // Don't queue lookAt messages if not ready, they are real-time
+    if (_isReady) {
+      _postMessage({'type': 'control', 'x': x, 'y': y});
+    }
+  }
+
   void _postMessage(Map<String, dynamic> msg) {
     try {
-      if (_iframe == null || _iframe!.contentWindow == null) return;
-      _iframe!.contentWindow!.postMessage(msg, '*');
+      if (_iframe == null) return;
+      final contentWindow = WebUtils.getProperty(_iframe, 'contentWindow');
+      if (contentWindow != null) {
+        WebUtils.callMethod(
+            contentWindow, 'postMessage', [WebUtils.jsify(msg), '*']);
+      }
     } catch (e) {
       print('Failed to send to VRM: $e');
     }

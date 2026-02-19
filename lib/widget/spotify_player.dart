@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:ui_web' as ui_web;
-import 'dart:html' as html;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:project_test/widget/hud_components.dart';
+import 'hud_components.dart';
+import '../utils/web_utils.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SpotifyPlayer extends StatefulWidget {
   final String playlistId;
@@ -31,16 +33,15 @@ class _SpotifyPlayerState extends State<SpotifyPlayer> {
     // Register the iframe factory
     ui_web.platformViewRegistry.registerViewFactory(
       _viewId,
-      (int viewId) => html.IFrameElement()
-        ..src =
-            'https://open.spotify.com/embed/playlist/${widget.playlistId}?utm_source=generator&theme=0'
-        ..style.border = 'none'
-        ..width = '100%'
-        ..height = '100%'
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..allow =
+      (int viewId, {Object? params}) => WebUtils.createIFrameElement(
+        src:
+            'https://open.spotify.com/embed/playlist/${widget.playlistId}?utm_source=generator&theme=0',
+        border: 'none',
+        width: '100%',
+        height: '100%',
+        allow:
             'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture',
+      ),
     );
   }
 
@@ -50,7 +51,7 @@ class _SpotifyPlayerState extends State<SpotifyPlayer> {
       width: 400.w,
       height: 500.h,
       padding: EdgeInsets.zero,
-      accentColor: Colors.pinkAccent,
+      accentColor: Colors.greenAccent,
       child: Column(
         children: [
           // HUD Title Bar
@@ -60,17 +61,17 @@ class _SpotifyPlayerState extends State<SpotifyPlayer> {
             decoration: BoxDecoration(
               border: Border(
                   bottom:
-                      BorderSide(color: Colors.pinkAccent.withOpacity(0.3))),
+                      BorderSide(color: Colors.greenAccent.withOpacity(0.3))),
               gradient: LinearGradient(
                 colors: [
-                  Colors.pinkAccent.withOpacity(0.1),
+                  Colors.greenAccent.withOpacity(0.1),
                   Colors.transparent
                 ],
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.music_note, color: Colors.pinkAccent, size: 18.sp),
+                Icon(Icons.music_note, color: Colors.greenAccent, size: 18.sp),
                 SizedBox(width: 12.w),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +89,7 @@ class _SpotifyPlayerState extends State<SpotifyPlayer> {
                     Text(
                       "オーディオ・ストリーム - V4.2",
                       style: GoogleFonts.notoSansJp(
-                        color: Colors.pinkAccent,
+                        color: Colors.greenAccent,
                         fontSize: 8.sp,
                       ),
                     ),
@@ -109,7 +110,7 @@ class _SpotifyPlayerState extends State<SpotifyPlayer> {
             child: Container(
               margin: EdgeInsets.all(4.r),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.pinkAccent.withOpacity(0.1)),
+                border: Border.all(color: Colors.greenAccent.withOpacity(0.1)),
               ),
               child: kIsWeb
                   ? HtmlElementView(viewType: _viewId)

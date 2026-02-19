@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:js' as js;
-import 'dart:js_util' as js_util;
+import '../utils/web_utils.dart';
 import '../llm/llm_service.dart';
 import '../model/chat_message.dart';
 import 'chat_bubble.dart';
 import 'typing_indicator.dart';
+import 'vn_dialogue_bubble.dart';
 
 class AiChatPanel extends StatefulWidget {
   final List<ChatMessage> chatHistory;
@@ -21,6 +21,11 @@ class _AiChatPanelState extends State<AiChatPanel> {
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
   bool isTyping = false;
+
+  // VN State
+  String currentDialogueJp = "";
+  String? currentDialogueEn;
+  bool isSakuraSpeaking = false;
 
   @override
   void initState() {
@@ -40,6 +45,11 @@ class _AiChatPanelState extends State<AiChatPanel> {
           .add(ChatMessage(text: initialEnglish, role: MessageRole.assistant));
     });
     _postMessageToVrm('speak', initialEnglish, japaneseText: initialJapanese);
+    setState(() {
+      currentDialogueJp = initialJapanese;
+      currentDialogueEn = initialEnglish;
+      isSakuraSpeaking = true;
+    });
     _scrollToBottom();
   }
 
@@ -56,10 +66,14 @@ class _AiChatPanelState extends State<AiChatPanel> {
     _scrollToBottom();
 
     try {
-      final reply = await LlmService.ask(text);
+      String reply = await LlmService.getLlmResponse(messages);
+
       setState(() {
         isTyping = false;
         messages.add(ChatMessage(text: reply, role: MessageRole.assistant));
+        currentDialogueEn = reply;
+        currentDialogueJp = ""; // Reset since we don't have separate yet
+        isSakuraSpeaking = true;
       });
       _postMessageToVrm('speak', reply);
     } catch (e) {
@@ -75,25 +89,17 @@ class _AiChatPanelState extends State<AiChatPanel> {
   void _postMessageToVrm(String type, String text, {String? japaneseText}) {
     if (kIsWeb) {
       try {
-        var document = js.context['document'];
-        var iframe = js_util.callMethod(
-            document, 'querySelector', ['iframe[src="vrm/index.html"]']);
-        if (iframe != null) {
-          var contentWindow = js_util.getProperty(iframe, 'contentWindow');
-          if (contentWindow != null) {
-            // Support bilingual: if japaneseText is provided, send structured data
-            final messageData = japaneseText != null
-                ? {
-                    'type': type,
-                    'japanese': japaneseText,
-                    'english': text,
-                  }
-                : {'type': type, 'text': text};
+        // Support bilingual: if japaneseText is provided, send structured data
+        final messageData = japaneseText != null
+            ? {
+                'type': type,
+                'japanese': japaneseText,
+                'english': text,
+              }
+            : {'type': type, 'text': text};
 
-            js_util.callMethod(contentWindow, 'postMessage',
-                [js_util.jsify(messageData), '*']);
-          }
-        }
+        WebUtils.postMessageToIframe(
+            'iframe[src="vrm/index.html"]', messageData);
       } catch (e) {
         // Handle error silently
       }
@@ -229,9 +235,26 @@ class _AiChatPanelState extends State<AiChatPanel> {
                   children: [
                     ...messages.map((m) => ChatBubble(message: m)),
                     if (isTyping) const FuturisticTypingIndicator(),
+                    const SizedBox(height: 100), // Space for VN bubble
                   ],
                 ),
               ),
+            ),
+
+            // VN Dialogue Bubble Overlay for Chat
+            VnDialogueBubble(
+              text: currentDialogueEn ?? "",
+              subtitle: currentDialogueJp,
+              isSpeaking: isSakuraSpeaking,
+              onComplete: () {
+                Future.delayed(const Duration(seconds: 4), () {
+                  if (mounted) {
+                    setState(() {
+                      isSakuraSpeaking = false;
+                    });
+                  }
+                });
+              },
             ),
 
             // Input area
@@ -304,7 +327,7 @@ class _AiChatPanelState extends State<AiChatPanel> {
                                       const Color(0xFFFF6B9D).withOpacity(0.5),
                                   blurRadius: 12,
                                   spreadRadius: 1,
-                                )
+                                ),
                               ],
                       ),
                       child: Icon(
