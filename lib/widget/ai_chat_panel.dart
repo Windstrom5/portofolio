@@ -38,8 +38,9 @@ class _AiChatPanelState extends State<AiChatPanel> {
 
   Future<void> _addInitialMessage() async {
     const initialEnglish =
-        "Ara~ Hello there! I'm Sakura, Master Angga's personal maid. How can I help you today? ♡";
-    const initialJapanese = "あら〜こんにちは！私はサクラ、アンガ様の専属メイドです。今日は何かお手伝いできますか？♡";
+        "Ara~ Hello there! I'm Sakura, Master Angga's personal maid. Welcome to his portfolio! How can I help you today? ♡";
+    const initialJapanese =
+        "あら〜こんにちは！私はサクラ、アンガ様の専属メイドです。ポートフォリオへようこそ！今日は何かお手伝いできますか？♡";
     setState(() {
       messages
           .add(ChatMessage(text: initialEnglish, role: MessageRole.assistant));

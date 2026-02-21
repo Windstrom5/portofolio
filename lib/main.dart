@@ -2130,11 +2130,11 @@ class _HomePageState extends State<HomePage> {
 
     // Resume Context Quips
     final osQuips = [
-      "Master, checking the system logs... all clear! ♡",
+      "Visitor, checking the system logs... all clear! ♡",
       "Do you need me to open a project for you?",
       "I'm keeping an eye on the server status, don't worry!",
       "Master Angga, remember to stay hydrated while coding!",
-      "Waiting for your next command, Master...",
+      "Waiting for your next command, Visitor...",
       "Everything is running smoothly! ~",
       "Hehe~ This OS is really fast, isn't it?",
     ];
@@ -2157,7 +2157,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _triggerPersonalizedReaction(String label, int index) {
-    String message = "Opening $label for you, Master! ♡";
+    String message = "Opening $label for you, Visitor! ♡";
     String emotion = 'fun';
 
     if (label.contains("Experience")) {
@@ -2167,7 +2167,7 @@ class _HomePageState extends State<HomePage> {
       message = "Check out Master Angga's creative works! ♡";
       emotion = 'fun';
     } else if (label.contains("Education")) {
-      message = "Master is very studious! Here's his academic journey.";
+      message = "Master Angga is very studious! Here's his academic journey.";
       emotion = 'joy';
     } else if (label.contains("Poker") ||
         label.contains("TicTacToe") ||
@@ -2176,7 +2176,7 @@ class _HomePageState extends State<HomePage> {
       emotion = 'fun';
     }
     //else if (label == "Spotify") {
-    //   message = "Let's listen to some music together, Master! ♪";
+    //   message = "Let's listen to some music together, Visitor! ♪";
     //   emotion = 'joy';
     // }
 
@@ -2255,7 +2255,7 @@ class _HomePageState extends State<HomePage> {
                             controller: _vrmController,
                             onReady: () {
                               _vrmController.speak(
-                                  "System initialized. Welcome back, Master! ♡",
+                                  "System initialized. Welcome, Visitor! ♡",
                                   emotion: 'joy');
                             },
                           )),
@@ -2599,7 +2599,7 @@ class _TicTacToeState extends State<TicTacToe> {
       List<String> moveEng = [
         "So you chose there~!",
         "Fufu, good placement!",
-        "Can you block Sakura?♡",
+        "Can you block Sakura? ♡",
         "That was unexpected~!",
       ];
       int idx = Random().nextInt(moveQuips.length);

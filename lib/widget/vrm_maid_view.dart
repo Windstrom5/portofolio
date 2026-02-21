@@ -60,7 +60,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
       'vrm-maid-${hashCode}',
       (int viewId, {Object? params}) {
         final iframe = WebUtils.createIFrameElement(
-          src: 'vrm/index.html',
+          src: 'vrm/index.html?viewId=${hashCode}',
           border: 'none',
           width: '100%',
           height: '100%',
@@ -159,6 +159,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
       if (_iframe == null) return;
       final contentWindow = WebUtils.getProperty(_iframe, 'contentWindow');
       if (contentWindow != null) {
+        msg['targetId'] = '${hashCode}';
         WebUtils.callMethod(
             contentWindow, 'postMessage', [WebUtils.jsify(msg), '*']);
       }

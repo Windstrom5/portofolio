@@ -143,6 +143,7 @@
   </div>
   <div id="bubble-container">
     <div id="speech-bubble">
+      <div id="voice-status" style="position: absolute; top: 10px; right: 10px; font-size: 0.6rem; color: #ff6b9d; font-weight: bold; opacity: 0.8;"></div>
       <span id="text-display">...</span>
     </div>
   </div>
@@ -249,18 +250,18 @@
     function selectBestVoice(voices) {
       const jaVoices = voices.filter((v) => v.lang === "ja-JP" || v.lang.startsWith("ja"));
 
-      // Priority order for natural-sounding voices
+      // Priority order for natural-sounding female voices
       const priorityPatterns = [
-        /Microsoft.*Nanami/i,      // Edge Neural voice (very natural)
-        /Microsoft.*Haruka/i,      // Edge voice
+        /Microsoft.*Nanami/i,      // Edge Neural voice (High quality female)
+        /Microsoft.*Haruka/i,      // Microsoft Female
         /Google.*日本語/i,          // Google Japanese
         /Google.*Japanese/i,       // Google Japanese alt
-        /Neural/i,                 // Any neural voice
-        /Natural/i,                // Any natural voice
-        /Premium/i,                // Premium voices
-        /Kyoko/i,                  // Apple Kyoko
-        /O-Ren/i,                  // Apple O-Ren
-        /Otoya/i,                  // Apple Otoya
+        /Neural.*Female/i,         // Neural female
+        /Natural.*Female/i,        // Natural female
+        /Kyoko/i,                  // Apple Kyoko (Female)
+        /O-Ren/i,                  // Apple O-Ren (Female)
+        /Mei-Mei/i,                // Possible other female names
+        /Airi/i,
       ];
 
       for (const pattern of priorityPatterns) {
@@ -319,23 +320,107 @@
       window.removeEventListener('message', unlockOnMessage);
     });
 
-    function speak(textOrData) {
+    let currentAudio = null;
+    let audioContext = null;
+    let analyser = null;
+    let dataArray = null;
+
+    async function speakWithVoicevox(text, speakerId = 46) {
+      const statusEl = document.getElementById("voice-status");
+      try {
+        if (statusEl) statusEl.textContent = "⌛ SYNCING...";
+        
+        // Use api.tts.quest v3 for better stability
+        const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(text)}&speaker=${speakerId}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Voicevox API request failed");
+        
+        const data = await response.json();
+        if (!data.success) throw new Error("Voicevox synthesis failed");
+
+        const statusUrl = data.audioStatusUrl;
+        const audioUrl = data.mp3DownloadUrl;
+
+        // Poll for readiness
+        let isReady = false;
+        let attempts = 0;
+        const maxAttempts = 15; // ~7.5 seconds
+
+        if (statusEl) statusEl.textContent = "✦ GENERATING...";
+
+        while (!isReady && attempts < maxAttempts) {
+          const statusRes = await fetch(statusUrl);
+          const statusData = await statusRes.json();
+          if (statusData.isAudioReady) {
+            isReady = true;
+          } else {
+            attempts++;
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+
+        if (!isReady) throw new Error("Voicevox timeout");
+        if (statusEl) statusEl.textContent = "✦ NEURAL";
+        
+        if (currentAudio) {
+          currentAudio.pause();
+          window.speechSynthesis.cancel();
+        }
+        
+        currentAudio = new Audio(audioUrl);
+        
+        // Setup Analysis
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        const source = audioContext.createMediaElementSource(currentAudio);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        currentAudio.onplay = () => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'speechStart' }, '*');
+          }
+        };
+
+        currentAudio.onended = () => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'speechEnd' }, '*');
+          }
+          hideTimeout = setTimeout(() => {
+            document.getElementById("bubble-container").style.opacity = "0";
+          }, 5000);
+        };
+
+        await currentAudio.play();
+        return true;
+      } catch (e) {
+        console.warn("VRM: Voicevox failed, falling back to browser TTS", e);
+        if (statusEl) statusEl.textContent = "✦ LEGACY";
+        return false;
+      }
+    }
+
+    async function speak(textOrData) {
       let japaneseText, englishText;
 
-      // Handle both old format (string) and new format (object with jp/en)
       if (typeof textOrData === 'object' && textOrData !== null) {
         japaneseText = textOrData.japanese || textOrData.jp || textOrData.text || "";
         englishText = textOrData.english || textOrData.en || japaneseText;
       } else {
-        // Legacy: single text string - use for both
         japaneseText = textOrData || "";
         englishText = japaneseText;
       }
 
-      if (!japaneseText) {
-        console.warn("VRM: No text provided to speak");
-        return;
-      }
+      if (!japaneseText) return;
 
       const cleanJapanese = japaneseText.replace(/\*/g, "").replace(/#/g, "");
       const cleanEnglish = englishText.replace(/\*/g, "").replace(/#/g, "");
@@ -349,14 +434,22 @@
       display.innerHTML = "";
       container.style.opacity = "1";
 
+      // 1. Try Voicevox first (Natural)
+      const voicevoxSuccess = await speakWithVoicevox(cleanJapanese);
+      
+      if (voicevoxSuccess) {
+          // Voicevox is playing, just start typewriter
+          startSyncedTypewriter(cleanEnglish, { text: cleanJapanese, rate: 1.0 });
+          return;
+      }
+
+      // 2. Fallback to Browser TTS (Robotic)
       window.speechSynthesis.cancel();
       
-      // If voices aren't ready, try to check again
       if (!voicesReady) {
         checkVoices();
         if (!voicesReady) {
           display.innerHTML = "Voice system loading... ♡<br>" + cleanEnglish;
-          // Show unlock if it seems blocked
           document.getElementById("voice-unlock").style.display = "flex";
           return;
         }
@@ -368,67 +461,29 @@
 
       const utter = new SpeechSynthesisUtterance(cleanJapanese);
       utter.lang = "ja-JP";
-
-      // Use pre-selected best voice
-      if (selectedVoice) {
-        utter.voice = selectedVoice;
-      } else {
-        // Final fallback search
-        const voices = window.speechSynthesis.getVoices();
-        utter.voice = voices.find(v => v.lang.startsWith('ja')) || voices[0];
-      }
-
-      // More natural speech parameters (less robotic)
-      utter.pitch = 1.2;
-      utter.rate = 1.0;
-      utter.volume = 1.0;
-
-      // Track speech progress for text sync
-      let speechStarted = false;
+      if (selectedVoice) utter.voice = selectedVoice;
+      utter.pitch = 1.45;
+      utter.rate = 1.05;
 
       utter.onstart = () => {
-        speechStarted = true;
         startSyncedTypewriter(cleanEnglish, utter);
-        // Notify parent that speech started
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: 'speechStart' }, '*');
         }
       };
 
       utter.onend = () => {
-        // Ensure full text is displayed when speech ends
         display.innerHTML = cleanEnglish;
-        document.getElementById("speech-bubble").scrollTop =
-          document.getElementById("speech-bubble").scrollHeight;
-
-        // Notify parent that speech ended
+        document.getElementById("speech-bubble").scrollTop = document.getElementById("speech-bubble").scrollHeight;
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: 'speechEnd' }, '*');
         }
-
         hideTimeout = setTimeout(() => {
           container.style.opacity = "0";
         }, 5000);
       };
 
-      utter.onerror = (e) => {
-        console.warn("Speech error:", e);
-        // Fallback: show text anyway
-        display.innerHTML = cleanEnglish;
-        // Notify parent that speech ended (even on error)
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'speechEnd' }, '*');
-        }
-      };
-
       window.speechSynthesis.speak(utter);
-
-      // Fallback if onstart doesn't fire (some browsers)
-      setTimeout(() => {
-        if (!speechStarted) {
-          startSyncedTypewriter(cleanEnglish, utter);
-        }
-      }, 100);
     }
 
     // Synced typewriter that matches speech duration
@@ -458,29 +513,41 @@
       }, intervalMs);
     }
 
-    // Listen for postMessage from parent
+    // --- Message Handling ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const myViewId = urlParams.get('viewId');
+    console.log(`VRM: Instance started with viewId: ${myViewId}`);
+
     window.addEventListener("message", (event) => {
-      const type = event.data.type;
+      const data = event.data;
+      if (!data) return;
+
+      // Filter by targetId if provided and we have our own viewId
+      if (myViewId && data.targetId && data.targetId !== myViewId) {
+        return; 
+      }
+
+      const type = data.type;
       
       if (type === "speak") {
         if (voicesReady) {
           // Handle bilingual format: {japanese, english} or legacy {text}
-          if (event.data.japanese && event.data.english) {
+          if (data.japanese && data.english) {
             speak({
-              japanese: event.data.japanese,
-              english: event.data.english
+              japanese: data.japanese,
+              english: data.english
             });
           } else {
             // Legacy format or fallback
-            speak(event.data.text || event.data.japanese || event.data.english || "");
+            speak(data.text || data.japanese || data.english || "");
           }
         } else {
           document.getElementById("text-display").innerHTML =
-            "Still loading Sakura's voice... ♡<br>" + (event.data.english || event.data.text || "");
+            "Still loading Sakura's voice... ♡<br>" + (data.english || data.text || "");
         }
       } else if (type === "emotion") {
         // Handle emotion changes: joy, angry, sorrow, fun, lookup, lookdown, etc.
-        const emotion = event.data.emotion;
+        const emotion = data.emotion;
         if (vrm && emotion) {
            // Reset common expressions
            vrm.expressionManager.setValue("joy", 0);
@@ -492,11 +559,6 @@
            if (["joy", "angry", "sorrow", "fun"].includes(emotion)) {
              vrm.expressionManager.setValue(emotion, 1.0);
            }
-           
-           // Special logic for reset or neutral
-           if (emotion === "neutral") {
-             // All reset above is enough
-           }
         }
       } else if (type === "wake") {
         isSleeping = false;
@@ -505,14 +567,14 @@
           if (neck) neck.rotation.x = 0;
         }
         speak({
-          japanese: "あら？ご主人様？やっと来たのね！待ってたよ！",
-          english: "H-Huh? Master? You're finally here! I've been waiting!"
+          japanese: "あら？お客様？やっと来たのね！待ってたよ！",
+          english: "H-Huh? A visitor? You're finally here! I've been waiting! ♡"
         });
       } else if (type === "control") {
         // Head tracking data
-        if (event.data.x !== undefined && event.data.y !== undefined) {
-           targetX = event.data.x; // -1 to 1
-           targetY = event.data.y; // -1 to 1
+        if (data.x !== undefined && data.y !== undefined) {
+           targetX = data.x; // -1 to 1
+           targetY = data.y; // -1 to 1
         }
       }
     });
@@ -570,12 +632,25 @@
             Math.sin(t * 0.5) > 0.98 ? 1 : 0,
           );
 
-          if (window.speechSynthesis.speaking) {
-            const mouthOpen = Math.abs(Math.sin(t * 15)) * 0.6;
-            vrm.expressionManager.setValue("aa", mouthOpen);
-          } else {
-            vrm.expressionManager.setValue("aa", 0);
+          // --- MOUTH MAPPING ---
+          let mouthOpen = 0;
+          if (currentAudio && !currentAudio.paused) {
+            // Audio-reactive mouth
+            if (analyser && dataArray) {
+              analyser.getByteFrequencyData(dataArray);
+              let sum = 0;
+              for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+              }
+              const average = sum / dataArray.length;
+              mouthOpen = Math.min(1.0, average / 40); // Sensitive enough for speech
+            }
+          } else if (window.speechSynthesis.speaking) {
+            // Fallback: Sine wave for browser TTS
+            mouthOpen = Math.abs(Math.sin(t * 15)) * 0.6;
           }
+
+          vrm.expressionManager.setValue("aa", mouthOpen);
 
           const breath = Math.sin(t * 1) * 0.05;
           vrm.humanoid.getNormalizedBoneNode("spine").rotation.x = breath;

@@ -206,10 +206,12 @@ globalThis.askLLM = async (prompt, options = {}) => {
   // Parse the bilingual response
   const parsed = parseBilingualResponse(reply);
 
-  // 🔊 ALWAYS SPEAK IN JAPANESE MAID VOICE
+  // 🔊 Redundant: Handled by VRM iframe now
+  /*
   if (options.speak !== false) {
     speak(parsed.japanese, options.emotion ?? "neutral");
   }
+  */
 
   // Return the English text for chat display, but also include a way to get full data
   // We'll send the structured data via a custom event for the VRM
