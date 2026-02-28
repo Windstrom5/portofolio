@@ -250,14 +250,16 @@
     function selectBestVoice(voices) {
       const jaVoices = voices.filter((v) => v.lang === "ja-JP" || v.lang.startsWith("ja"));
 
-      // Priority order for natural-sounding female voices
+      // Priority order: neural/natural voices first for best quality
       const priorityPatterns = [
+        /Microsoft.*Nanami.*Online.*Natural/i, // Edge Neural (best quality)
         /Microsoft.*Nanami/i,      // Edge Neural voice (High quality female)
-        /Microsoft.*Haruka/i,      // Microsoft Female
+        /Google.*ja-JP.*Neural/i,  // Google Neural Japanese
         /Google.*日本語/i,          // Google Japanese
         /Google.*Japanese/i,       // Google Japanese alt
-        /Neural.*Female/i,         // Neural female
-        /Natural.*Female/i,        // Natural female
+        /Microsoft.*Haruka/i,      // Microsoft Female
+        /Neural/i,                 // Any neural voice
+        /Natural/i,                // Any natural voice
         /Kyoko/i,                  // Apple Kyoko (Female)
         /O-Ren/i,                  // Apple O-Ren (Female)
         /Mei-Mei/i,                // Possible other female names
@@ -266,11 +268,20 @@
 
       for (const pattern of priorityPatterns) {
         const match = jaVoices.find((v) => pattern.test(v.name));
-        if (match) return match;
+        if (match) {
+          console.log("VRM: Selected neural voice:", match.name);
+          return match;
+        }
       }
 
       // Fallback to any Japanese voice
       return jaVoices[0] || voices[0];
+    }
+
+    // Check if selected voice is neural/natural quality
+    function isNeuralVoice(voice) {
+      if (!voice) return false;
+      return /neural|natural|nanami|online/i.test(voice.name);
     }
 
     function hideLoading() {
@@ -320,20 +331,35 @@
       window.removeEventListener('message', unlockOnMessage);
     });
 
-    let currentAudio = null;
+    let currentAudioSource = null;
     let audioContext = null;
     let analyser = null;
     let dataArray = null;
+    let isVoicevoxPlaying = false;
+
+    // Stop any currently playing audio
+    function stopCurrentAudio() {
+      if (currentAudioSource) {
+        try { currentAudioSource.stop(); } catch(e) {}
+        currentAudioSource = null;
+      }
+      isVoicevoxPlaying = false;
+      window.speechSynthesis.cancel();
+    }
 
     async function speakWithVoicevox(text, speakerId = 46) {
       const statusEl = document.getElementById("voice-status");
       try {
         if (statusEl) statusEl.textContent = "⌛ SYNCING...";
         
-        // Use api.tts.quest v3 for better stability
+        // Use api.tts.quest v3 with AbortController timeout
         const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(text)}&speaker=${speakerId}`;
         
-        const response = await fetch(url);
+        const controller = new AbortController();
+        const fetchTimeout = setTimeout(() => controller.abort(), 10000); // 10s hard timeout
+        
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(fetchTimeout);
         if (!response.ok) throw new Error("Voicevox API request failed");
         
         const data = await response.json();
@@ -342,10 +368,10 @@
         const statusUrl = data.audioStatusUrl;
         const audioUrl = data.mp3DownloadUrl;
 
-        // Poll for readiness
+        // Poll for readiness (increased timeout)
         let isReady = false;
         let attempts = 0;
-        const maxAttempts = 15; // ~7.5 seconds
+        const maxAttempts = 25; // ~12.5 seconds
 
         if (statusEl) statusEl.textContent = "✦ GENERATING...";
 
@@ -363,14 +389,10 @@
         if (!isReady) throw new Error("Voicevox timeout");
         if (statusEl) statusEl.textContent = "✦ NEURAL";
         
-        if (currentAudio) {
-          currentAudio.pause();
-          window.speechSynthesis.cancel();
-        }
-        
-        currentAudio = new Audio(audioUrl);
-        
-        // Setup Analysis
+        stopCurrentAudio();
+
+        // === CORS FIX: Fetch audio as ArrayBuffer, decode, play via AudioBufferSourceNode ===
+        // This avoids CORS restrictions that cause MediaElementAudioSource to output zeroes
         if (!audioContext) {
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -378,20 +400,26 @@
           await audioContext.resume();
         }
 
-        const source = audioContext.createMediaElementSource(currentAudio);
+        const audioResponse = await fetch(audioUrl);
+        const arrayBuffer = await audioResponse.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        // Create source and analyser
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
         source.connect(analyser);
         analyser.connect(audioContext.destination);
         dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        currentAudio.onplay = () => {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'speechStart' }, '*');
-          }
-        };
+        currentAudioSource = source;
+        isVoicevoxPlaying = true;
 
-        currentAudio.onended = () => {
+        source.onended = () => {
+          isVoicevoxPlaying = false;
+          currentAudioSource = null;
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: 'speechEnd' }, '*');
           }
@@ -400,11 +428,14 @@
           }, 5000);
         };
 
-        await currentAudio.play();
+        source.start(0);
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'speechStart' }, '*');
+        }
         return true;
       } catch (e) {
         console.warn("VRM: Voicevox failed, falling back to browser TTS", e);
-        if (statusEl) statusEl.textContent = "✦ LEGACY";
+        if (statusEl) statusEl.textContent = isNeuralVoice(selectedVoice) ? "✦ NEURAL" : "✦ LEGACY";
         return false;
       }
     }
@@ -462,8 +493,9 @@
       const utter = new SpeechSynthesisUtterance(cleanJapanese);
       utter.lang = "ja-JP";
       if (selectedVoice) utter.voice = selectedVoice;
-      utter.pitch = 1.45;
-      utter.rate = 1.05;
+      // More natural settings: lower pitch + slower rate = less robotic
+      utter.pitch = isNeuralVoice(selectedVoice) ? 1.1 : 1.15;
+      utter.rate = isNeuralVoice(selectedVoice) ? 0.9 : 0.95;
 
       utter.onstart = () => {
         startSyncedTypewriter(cleanEnglish, utter);
@@ -634,20 +666,22 @@
 
           // --- MOUTH MAPPING ---
           let mouthOpen = 0;
-          if (currentAudio && !currentAudio.paused) {
-            // Audio-reactive mouth
-            if (analyser && dataArray) {
-              analyser.getByteFrequencyData(dataArray);
-              let sum = 0;
-              for (let i = 0; i < dataArray.length; i++) {
-                sum += dataArray[i];
-              }
-              const average = sum / dataArray.length;
-              mouthOpen = Math.min(1.0, average / 40); // Sensitive enough for speech
+          if (isVoicevoxPlaying && analyser && dataArray) {
+            // Audio-reactive mouth from decoded AudioBuffer (CORS-safe)
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
             }
+            const average = sum / dataArray.length;
+            mouthOpen = Math.min(1.0, average / 40); // Sensitive enough for speech
           } else if (window.speechSynthesis.speaking) {
-            // Fallback: Sine wave for browser TTS
-            mouthOpen = Math.abs(Math.sin(t * 15)) * 0.6;
+            // More natural mouth animation for browser TTS
+            // Combine multiple sine waves for less robotic movement
+            const wave1 = Math.abs(Math.sin(t * 12)) * 0.45;
+            const wave2 = Math.abs(Math.sin(t * 7.3)) * 0.25;
+            const wave3 = Math.abs(Math.sin(t * 3.1)) * 0.15;
+            mouthOpen = Math.min(0.8, wave1 + wave2 + wave3);
           }
 
           vrm.expressionManager.setValue("aa", mouthOpen);

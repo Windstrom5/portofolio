@@ -66,6 +66,7 @@ class ResumePdf {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(0),
         theme: theme,
+        footer: (context) => _buildFooter(),
         build: (context) {
           final experiencesList =
               experiences.isEmpty ? allWorkExperiences : experiences;
@@ -115,16 +116,37 @@ class ResumePdf {
                               ),
                             ),
                             pw.SizedBox(height: 4),
-                            pw.Text(
-                              'FULL STACK DEVELOPER // BACKEND SPECIALIST',
-                              style: pw.TextStyle(
-                                fontSize: 8,
-                                fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.cyanAccent,
-                                letterSpacing: 2.5,
+                            pw.UrlLink(
+                              destination: 'https://windstrom5profile.netlify.app',
+                              child: pw.Text(
+                                'FULL STACK DEVELOPER // BACKEND SPECIALIST',
+                                style: pw.TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.cyanAccent,
+                                  letterSpacing: 2.5,
+                                ),
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      // QR Code linking to portfolio
+                      pw.Container(
+                        width: 55,
+                        height: 55,
+                        padding: const pw.EdgeInsets.all(3),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.white,
+                          borderRadius:
+                              const pw.BorderRadius.all(pw.Radius.circular(4)),
+                          border: pw.Border.all(
+                              color: PdfColors.cyanAccent, width: 1.5),
+                        ),
+                        child: pw.BarcodeWidget(
+                          barcode: pw.Barcode.qrCode(),
+                          data: 'https://windstrom5profile.netlify.app',
+                          color: PdfColors.blueGrey900,
                         ),
                       ),
                     ],
@@ -140,11 +162,48 @@ class ResumePdf {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       _contactTag('LOC', 'Yogyakarta, ID'),
-                      _contactTag('TEL', '+62 812-5311-0040'),
-                      _contactTag('EML', 'anggagant@gmail.com'),
-                      _contactTag('WEB', 'windstrom5.vercel.app'),
-                      _contactTag('GIT', 'Windstrom5'),
+                      _contactTagLink(
+                          'TEL', '+62 812-5311-0040', 'tel:+6281253110040'),
+                      _contactTagLink('EML', 'anggagant@gmail.com',
+                          'mailto:anggagant@gmail.com'),
+                      _contactTagLink('WEB', 'windstrom5profile.netlify.app',
+                          'https://windstrom5profile.netlify.app'),
+                      _contactTagLink(
+                          'GIT', 'Windstrom5', 'https://github.com/Windstrom5'),
                     ],
+                  ),
+                ],
+              ),
+            ),
+
+            // PROFESSIONAL SUMMARY
+            pw.Container(
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+              decoration: const pw.BoxDecoration(
+                color: PdfColors.blueGrey800,
+              ),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    width: 3,
+                    height: 30,
+                    color: PdfColors.cyanAccent,
+                    margin: const pw.EdgeInsets.only(right: 10),
+                  ),
+                  pw.Expanded(
+                    child: pw.Text(
+                      'Full Stack Developer with hands-on experience in Laravel, Kotlin, and Flutter. '
+                      'Passionate about building clean, scalable systems — from hospital management '
+                      'software to interactive portfolio websites. Strong in backend architecture, '
+                      'REST API design, and cross-platform mobile development.',
+                      style: const pw.TextStyle(
+                        fontSize: 7.5,
+                        color: PdfColors.white,
+                        lineSpacing: 1.6,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -263,6 +322,7 @@ class ResumePdf {
     );
   }
 
+  // Non-clickable contact tag (for location, etc.)
   pw.Widget _contactTag(String label, String value) {
     return pw.Row(
       children: [
@@ -274,6 +334,28 @@ class ResumePdf {
         pw.SizedBox(width: 4),
         pw.Text(value,
             style: const pw.TextStyle(fontSize: 6, color: PdfColors.white)),
+      ],
+    );
+  }
+
+  // Clickable contact tag with URL link
+  pw.Widget _contactTagLink(String label, String value, String url) {
+    return pw.Row(
+      children: [
+        pw.Text('[$label]',
+            style: pw.TextStyle(
+                fontSize: 6,
+                color: PdfColors.cyanAccent,
+                fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(width: 4),
+        pw.UrlLink(
+          destination: url,
+          child: pw.Text(value,
+              style: pw.TextStyle(
+                  fontSize: 6,
+                  color: PdfColors.white,
+                  decoration: pw.TextDecoration.underline)),
+        ),
       ],
     );
   }
@@ -440,44 +522,63 @@ class ResumePdf {
       decoration: const pw.BoxDecoration(
         color: PdfColors.blueGrey50,
       ),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Expanded(
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(edu.degreeType.toUpperCase(),
-                    style: pw.TextStyle(
-                        fontSize: 9,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blueGrey900)),
-                pw.Text(edu.schoolName,
-                    style: const pw.TextStyle(
-                        fontSize: 8, color: PdfColors.cyan800)),
-                pw.Text(edu.years,
-                    style: pw.TextStyle(
-                        fontSize: 7,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blueGrey400)),
-              ],
-            ),
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(edu.degreeType.toUpperCase(),
+                        style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey900)),
+                    pw.Text(edu.schoolName,
+                        style: const pw.TextStyle(
+                            fontSize: 8, color: PdfColors.cyan800)),
+                    pw.Text('${edu.location} | ${edu.years}',
+                        style: pw.TextStyle(
+                            fontSize: 7,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey400)),
+                  ],
+                ),
+              ),
+              pw.Container(
+                width: 30,
+                height: 30,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.blueGrey300, width: 1),
+                  color: PdfColors.white,
+                ),
+                child: pw.Center(
+                  child: pw.Text("EDU",
+                      style: pw.TextStyle(
+                          fontSize: 7,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blueGrey400)),
+                ),
+              ),
+            ],
           ),
-          pw.Container(
-            width: 30,
-            height: 30,
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.blueGrey300, width: 1),
-              color: PdfColors.white,
-            ),
-            child: pw.Center(
-              child: pw.Text("EDU",
-                  style: pw.TextStyle(
-                      fontSize: 7,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.blueGrey400)),
-            ),
-          ),
+          // Learnings bullet points
+          if (edu.learnings.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            ...edu.learnings.split('\n').where((l) => l.trim().isNotEmpty).map(
+                  (line) => pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 2),
+                    child: pw.Text(
+                      line.trim(),
+                      style: const pw.TextStyle(
+                          fontSize: 6.5, color: PdfColors.blueGrey600),
+                    ),
+                  ),
+                ),
+          ],
         ],
       ),
     );
@@ -489,16 +590,43 @@ class ResumePdf {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(ach.certificateName.toUpperCase(),
-              style: pw.TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blueGrey900)),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Expanded(
+                child: pw.Text(ach.certificateName.toUpperCase(),
+                    style: pw.TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blueGrey900)),
+              ),
+              pw.Container(
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.blueGrey100,
+                ),
+                child: pw.Text(ach.date,
+                    style: pw.TextStyle(
+                        fontSize: 6,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blueGrey600)),
+              ),
+            ],
+          ),
           pw.Text(ach.organizationName,
               style: pw.TextStyle(
                   fontSize: 7.5,
                   color: PdfColors.blueGrey600,
                   fontStyle: pw.FontStyle.italic)),
+          if (ach.description.isNotEmpty) ...[
+            pw.SizedBox(height: 2),
+            pw.Text(ach.description,
+                style: const pw.TextStyle(
+                    fontSize: 6.5,
+                    color: PdfColors.blueGrey500,
+                    lineSpacing: 1.2)),
+          ],
           pw.Container(
             height: 0.5,
             width: 50,
@@ -540,6 +668,45 @@ class ResumePdf {
               .toList(),
         ),
       ],
+    );
+  }
+
+  // Footer with clickable portfolio link
+  pw.Widget _buildFooter() {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+      decoration: const pw.BoxDecoration(
+        color: PdfColors.blueGrey900,
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.cyanAccent, width: 1),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('ANGGA NUGRAHA // RESUME',
+              style: pw.TextStyle(
+                  fontSize: 6, color: PdfColors.blueGrey400, letterSpacing: 1)),
+          pw.UrlLink(
+            destination: 'https://windstrom5profile.netlify.app',
+            child: pw.Row(
+              children: [
+                pw.Text('VIEW LIVE PORTFOLIO ',
+                    style: pw.TextStyle(
+                        fontSize: 6,
+                        color: PdfColors.cyanAccent,
+                        fontWeight: pw.FontWeight.bold,
+                        letterSpacing: 1)),
+                pw.Text('windstrom5profile.netlify.app',
+                    style: pw.TextStyle(
+                        fontSize: 6,
+                        color: PdfColors.white,
+                        decoration: pw.TextDecoration.underline)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

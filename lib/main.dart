@@ -30,6 +30,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'widget/tech_marquee.dart';
 import 'widget/project_store.dart';
 import 'widget/vn_dialogue_bubble.dart';
+import 'widget/image_processor.dart';
 
 void main() {
   runApp(MyApp());
@@ -997,6 +998,9 @@ class _HomePageState extends State<HomePage> {
         break;
       case 9: // Chess
         content = _buildChessView();
+        break;
+      case 10: // Image Lab
+        content = const ImageProcessor();
         break;
       default:
         content = Container();
@@ -1986,6 +1990,8 @@ class _HomePageState extends State<HomePage> {
         return "5-Card Draw Poker";
       case 9:
         return "Chess";
+      case 10:
+        return "Image Lab";
       default:
         return "";
     }
@@ -2174,6 +2180,10 @@ class _HomePageState extends State<HomePage> {
         label.contains("RPS")) {
       message = "Ready to lose to me? Fufufu~ Let's play!";
       emotion = 'fun';
+    } else if (label.contains("Image Lab")) {
+      message =
+          "Time to get creative with some images! Let me help you, Visitor~ ♡";
+      emotion = 'joy';
     }
     //else if (label == "Spotify") {
     //   message = "Let's listen to some music together, Visitor! ♪";
@@ -2286,6 +2296,7 @@ class _HomePageState extends State<HomePage> {
                     _desktopShortcut(7, FontAwesomeIcons.dice, "RPS"),
                     _desktopShortcut(8, FontAwesomeIcons.diamond, "Poker"),
                     _desktopShortcut(9, FontAwesomeIcons.chess, "Chess"),
+                    _desktopShortcut(10, FontAwesomeIcons.image, "Image Lab"),
                     _desktopShortcut(null, FontAwesomeIcons.robot, "Assistant",
                         onTap: openAiChat),
                     // _desktopShortcut(null, FontAwesomeIcons.spotify, "Spotify",

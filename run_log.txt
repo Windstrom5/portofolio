@@ -1,0 +1,29 @@
+﻿Launching lib\main.dart on Chrome in debug mode...
+Waiting for connection from debug service on Chrome...             27.8s
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+Debug service listening on ws://127.0.0.1:53098/0CASmsHXCWw=/ws
+A Dart VM Service on Chrome is available at: http://127.0.0.1:53098/0CASmsHXCWw=
+The Flutter DevTools debugger and profiler on Chrome is available at: http://127.0.0.1:53098/0CASmsHXCWw=/devtools/?uri=ws://127.0.0.1:53098/0CASmsHXCWw=/ws
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Could not find a set of Noto fonts to display all missing characters. Please add a font asset for the missing characters. See: https://docs.flutter.dev/cookbook/design/fonts
+DiscordService: Fetching status for user 411135817449340929... Code: 200
+DiscordService: Activity updated. Status: idle, Playing: Code
+VRM: Audio unlocked automatically
+VRM: Instance started with viewId: 998883034
+Voices loaded:
+Available ja voices:
+Selected voice:
+VRM: Model loaded, sending vrm_ready to parent
+VRM: Ready received for viewId 998883034
+VRM: Voicevox failed, falling back to browser TTS
+Weather API error: ClientException: Failed to fetch, uri=https://wttr.in?format=j1
+DiscordService: Fetching status for user 411135817449340929... Code: 200
+DiscordService: Activity updated. Status: idle, Playing: Code
