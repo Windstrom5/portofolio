@@ -349,7 +349,9 @@ class _PokerGameState extends State<PokerGame> {
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted ||
           phase == HoldemPhase.idle ||
-          phase == HoldemPhase.showdown) return;
+          phase == HoldemPhase.showdown) {
+        return;
+      }
       int toCall = currentBet - opponentBet;
       double strength;
       double drawBonus = 0.0;
@@ -359,13 +361,14 @@ class _PokerGameState extends State<PokerGame> {
       } else {
         var (rank, tiebreakers, _) = _getBestHand(opponentHand, communityCards);
         strength = rank / 9.0;
-        if (rank <= 2 && tiebreakers.isNotEmpty)
+        if (rank <= 2 && tiebreakers.isNotEmpty) {
           strength += (tiebreakers[0] / 14.0) * 0.15;
+        }
         if (rank < 4) {
           drawBonus = _evaluateDrawPotential(opponentHand, communityCards);
-          if (phase == HoldemPhase.flop)
+          if (phase == HoldemPhase.flop) {
             drawBonus *= 1.0;
-          else if (phase == HoldemPhase.turn)
+          } else if (phase == HoldemPhase.turn)
             drawBonus *= 0.6;
           else
             drawBonus *= 0.2;
@@ -569,7 +572,9 @@ class _PokerGameState extends State<PokerGame> {
     bool isFlush = suitsSet.length == 1;
     bool isStraight = _isStraight(values);
     Map<int, int> freq = {};
-    for (var v in values) freq[v] = (freq[v] ?? 0) + 1;
+    for (var v in values) {
+      freq[v] = (freq[v] ?? 0) + 1;
+    }
     int fourVal = freq.entries
         .firstWhere((e) => e.value == 4, orElse: () => const MapEntry(0, 0))
         .key;
@@ -584,25 +589,33 @@ class _PokerGameState extends State<PokerGame> {
           values[1] == 13 &&
           values[2] == 12 &&
           values[3] == 11 &&
-          values[4] == 10) return (9, []);
+          values[4] == 10) {
+        return (9, []);
+      }
       return (8, [values[0]]);
     }
-    if (fourVal > 0)
+    if (fourVal > 0) {
       return (7, [fourVal, values.firstWhere((v) => v != fourVal)]);
-    if (threeVal > 0 && pairVals.isNotEmpty)
+    }
+    if (threeVal > 0 && pairVals.isNotEmpty) {
       return (6, [threeVal, pairVals[0]]);
+    }
     if (isFlush) return (5, values);
-    if (isStraight)
+    if (isStraight) {
       return (4, [(values[0] == 14 && values[4] == 2) ? 5 : values[0]]);
-    if (threeVal > 0)
+    }
+    if (threeVal > 0) {
       return (3, [threeVal, ...values.where((v) => v != threeVal)]);
-    if (pairVals.length >= 2)
+    }
+    if (pairVals.length >= 2) {
       return (
         2,
         [pairVals[0], pairVals[1], values.firstWhere((v) => freq[v] == 1)]
       );
-    if (pairVals.length == 1)
+    }
+    if (pairVals.length == 1) {
       return (1, [pairVals[0], ...values.where((v) => v != pairVals[0])]);
+    }
     return (0, values);
   }
 

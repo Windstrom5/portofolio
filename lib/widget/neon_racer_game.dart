@@ -60,7 +60,7 @@ class _NeonRacerGameState extends State<NeonRacerGame> with TickerProviderStateM
   double _targetLaneX = 0.0;
   double _playerX = 0.0; // smooth interpolated position
   double _speed = 0.0;
-  double _maxSpeed = 320.0;
+  final double _maxSpeed = 320.0;
   int _gear = 1;
   double _nitroFuel = 100.0;
   bool _nitroActive = false;
@@ -192,8 +192,9 @@ class _NeonRacerGameState extends State<NeonRacerGame> with TickerProviderStateM
       _speed = _speed.clamp(0, 500);
 
       // Auto gear
-      if (_speed < 60) _gear = 1;
-      else if (_speed < 120) _gear = 2;
+      if (_speed < 60) {
+        _gear = 1;
+      } else if (_speed < 120) _gear = 2;
       else if (_speed < 180) _gear = 3;
       else if (_speed < 250) _gear = 4;
       else if (_speed < 350) _gear = 5;

@@ -12,7 +12,7 @@ class AchievementListItem extends StatelessWidget {
   final List<String> skills;
 
   const AchievementListItem({
-    Key? key,
+    super.key,
     required this.certificateName,
     required this.organizationName,
     required this.imagePath,
@@ -20,7 +20,7 @@ class AchievementListItem extends StatelessWidget {
         "Professional certification validating specialized skills and knowledge.",
     this.date = "2024-01-01",
     this.skills = const ["Skill 1", "Skill 2"],
-  }) : super(key: key);
+  });
 
   Future<void> _downloadCertificate() async {
     html.AnchorElement(href: imagePath)

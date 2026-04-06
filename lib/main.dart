@@ -137,7 +137,7 @@ class WindowInstance {
 class _HomePageState extends State<HomePage> {
   List<ChatMessage> chatHistory = [];
   int _selectedIndex = -1;
-  List<WindowInstance> _openWindows = []; // Stack of active windows
+  final List<WindowInstance> _openWindows = []; // Stack of active windows
   String _currentTime = "";
   List<String> additionalTerminalOutput = [];
   final TextEditingController _terminalController = TextEditingController();
@@ -720,9 +720,9 @@ class _HomePageState extends State<HomePage> {
     } else if (cmd.startsWith("open ")) {
       String target = cmd.substring(5).trim();
       int? index;
-      if (target == "projects")
+      if (target == "projects") {
         index = 1;
-      else if (target == "certificates")
+      } else if (target == "certificates")
         index = 2;
       else if (target == "education")
         index = 3;
@@ -821,10 +821,10 @@ class _HomePageState extends State<HomePage> {
         "  Host: Windstrom5 Portfolio",
         "  Kernel: WebGPU / CanvasKit",
         "  Uptime: $uptime",
-        "  Resolution: ${w}x${h} @ ${dpr.toStringAsFixed(1)}x",
+        "  Resolution: ${w}x$h @ ${dpr.toStringAsFixed(1)}x",
         if (cores > 0) "  CPU threads: $cores",
         if (ramGb != 'Unknown' && ramGb != '0')
-          "  Memory: ~${ramGb} GB (browser estimate)",
+          "  Memory: ~$ramGb GB (browser estimate)",
         "  Shell: Emulated zsh",
         "  Theme: Dracula",
         "  Browser: ${_getJsValue('navigator.userAgent').split(' ').lastWhere((e) => e.contains('/'), orElse: () => 'Unknown')}",
@@ -886,10 +886,10 @@ class _HomePageState extends State<HomePage> {
       final freeGb = totalGb * 0.55;
       final buffCache = totalGb * 0.15; // pretend some cached
 
-      final totalStr = totalGb.toStringAsFixed(1) + 'G';
-      final usedStr = usedGb.toStringAsFixed(1) + 'G';
-      final freeStr = freeGb.toStringAsFixed(1) + 'G';
-      final availStr = (freeGb + buffCache).toStringAsFixed(1) + 'G';
+      final totalStr = '${totalGb.toStringAsFixed(1)}G';
+      final usedStr = '${usedGb.toStringAsFixed(1)}G';
+      final freeStr = '${freeGb.toStringAsFixed(1)}G';
+      final availStr = '${(freeGb + buffCache).toStringAsFixed(1)}G';
 
       additionalTerminalOutput.addAll([
         "              total        used        free      shared  buff/cache   available",
@@ -900,9 +900,9 @@ class _HomePageState extends State<HomePage> {
     } else if (cmd == "lsb_release -a") {
       final ua = _getJsValue('navigator.userAgent').toLowerCase();
       String distro = "Unknown";
-      if (ua.contains("windows"))
+      if (ua.contains("windows")) {
         distro = "Windows-like";
-      else if (ua.contains("mac"))
+      } else if (ua.contains("mac"))
         distro = "macOS-like";
       else if (ua.contains("linux"))
         distro = "Linux-like";
@@ -2459,7 +2459,7 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 25.h),
           ...allWorkExperiences.map((exp) {
             return _buildRetroExperienceCard(exp);
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -2862,7 +2862,7 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: index != null
           ? () {
-              _addWindow(index!);
+              _addWindow(index);
               _triggerPersonalizedReaction(label, index);
               if (index == 0) {
                 additionalTerminalOutput.clear();
@@ -3377,7 +3377,7 @@ class _HomePageState extends State<HomePage> {
                         if (!isMobile) ...[
                           _systemInfoChip(
                             Icons.memory,
-                            "$_cpuCores cores • ${_fakeCpuLoad}%",
+                            "$_cpuCores cores • $_fakeCpuLoad%",
                           ),
                           SizedBox(width: 16.w),
                           _systemInfoChip(Icons.storage,
@@ -3386,7 +3386,7 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(width: 16.w),
                         _systemInfoChip(
                           Icons.cloud,
-                          "$_weatherIcon ${_weatherTemp}°C • $_weatherDesc",
+                          "$_weatherIcon $_weatherTemp°C • $_weatherDesc",
                         ),
                       ],
                     ),
@@ -3661,6 +3661,8 @@ class _HomePageState extends State<HomePage> {
 
 // Simple cursor blinker for terminal
 class BlinkCursor extends StatefulWidget {
+  const BlinkCursor({super.key});
+
   @override
   _BlinkCursorState createState() => _BlinkCursorState();
 }
@@ -3761,7 +3763,9 @@ class _TicTacToeState extends State<TicTacToe> {
   void _vrmMove() {
     if (!mounted || winner != '') return;
     List<int> empty = [];
-    for (int i = 0; i < 9; i++) if (board[i] == '') empty.add(i);
+    for (int i = 0; i < 9; i++) {
+      if (board[i] == '') empty.add(i);
+    }
     if (empty.isNotEmpty) {
       List<String> tapQuips = [
         "ふふっ、そこなの？♡",

@@ -15,7 +15,7 @@ class EducationListItem extends StatefulWidget {
   final List<String> skills;
 
   const EducationListItem({
-    Key? key,
+    super.key,
     required this.schoolName,
     required this.location,
     required this.years,
@@ -25,7 +25,7 @@ class EducationListItem extends StatefulWidget {
     required this.description,
     required this.learnings,
     this.skills = const [],
-  }) : super(key: key);
+  });
 
   @override
   State<EducationListItem> createState() => _EducationListItemState();

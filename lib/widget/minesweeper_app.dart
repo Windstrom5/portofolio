@@ -97,7 +97,9 @@ class _MinesweeperAppState extends State<MinesweeperApp> {
         r >= rows ||
         c < 0 ||
         c >= cols ||
-        grid[r][c].state != CellState.hidden) return;
+        grid[r][c].state != CellState.hidden) {
+      return;
+    }
 
     grid[r][c].state = CellState.revealed;
     if (grid[r][c].surroundingMines == 0) {

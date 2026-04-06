@@ -6,7 +6,6 @@ import 'dart:ui_web' as ui_web;
 import 'package:google_fonts/google_fonts.dart';
 import 'hud_components.dart';
 import '../utils/web_utils.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SpotifyPlayer extends StatefulWidget {
   final String playlistId;

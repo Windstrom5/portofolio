@@ -15,7 +15,7 @@ class EducationStoreDetailView extends StatelessWidget {
   final List<String> screenshots;
 
   const EducationStoreDetailView({
-    Key? key,
+    super.key,
     required this.schoolName,
     required this.location,
     required this.years,
@@ -25,7 +25,7 @@ class EducationStoreDetailView extends StatelessWidget {
     required this.description,
     required this.skills,
     this.screenshots = const [],
-  }) : super(key: key);
+  });
 
   Future<void> _launchMapURL() async {
     final Uri uri = Uri.parse(mapsUrl);
@@ -287,11 +287,11 @@ class _StatBadge extends StatelessWidget {
   final Color color;
 
   const _StatBadge({
-    Key? key,
+    super.key,
     required this.icon,
     required this.text,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

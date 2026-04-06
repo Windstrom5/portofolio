@@ -370,7 +370,9 @@ class _HackerTycoonGameState extends State<HackerTycoonGame> {
     String target = args[0].toLowerCase();
     void search(_ServerFile node, String path) {
       if (node.name.toLowerCase().contains(target)) _addOutput("  $path/${node.name}");
-      for (var c in node.children) search(c, '$path/${node.name}');
+      for (var c in node.children) {
+        search(c, '$path/${node.name}');
+      }
     }
     final root = _fileSystems[_currentServer];
     if (root != null) search(root, '');
@@ -397,7 +399,9 @@ class _HackerTycoonGameState extends State<HackerTycoonGame> {
       return;
     }
     _addOutput("PORT     STATE SERVICE");
-    for (var p in ports) _addOutput("  $p");
+    for (var p in ports) {
+      _addOutput("  $p");
+    }
     _addOutput("Nmap done: 1 host up.");
     _scannedPorts.add(target);
   }

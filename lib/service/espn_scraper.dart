@@ -108,7 +108,7 @@ class ESPNScraper {
               final nameCells = nameRows[i].querySelectorAll('td');
               final statsCells = statsRows[i].querySelectorAll('td');
 
-              if (nameCells.length >= 1 && statsCells.length >= 8) {
+              if (nameCells.isNotEmpty && statsCells.length >= 8) {
                 final teamNameElement = nameCells[0].querySelector('.hide-mobile');
                 final logoElement = nameCells[0].querySelector('img');
                 

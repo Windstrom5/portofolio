@@ -846,7 +846,7 @@ class ResumePdf {
                                           color: textSecondary,
                                           lineSpacing: 1.5))),
                             ])))
-                    .toList(),
+                    ,
               ])));
     }
 

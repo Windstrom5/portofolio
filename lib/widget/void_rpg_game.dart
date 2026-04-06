@@ -30,9 +30,9 @@ class _VoidRpgGameState extends State<VoidRpgGame> with TickerProviderStateMixin
 
   // --- Player Stats ---
   double _heroHp = 100;
-  double _heroMaxHp = 100;
+  final double _heroMaxHp = 100;
   double _heroStamina = 100;
-  double _heroMaxStamina = 100;
+  final double _heroMaxStamina = 100;
   int _estusFlasks = 5;
   int _deathCount = 0;
   _PlayerAction _playerAction = _PlayerAction.idle;
@@ -40,7 +40,7 @@ class _VoidRpgGameState extends State<VoidRpgGame> with TickerProviderStateMixin
 
   // --- Boss Stats ---
   double _bossHp = 500;
-  double _bossMaxHp = 500;
+  final double _bossMaxHp = 500;
   String _bossName = "ABYSSAL WATCHER";
   _BossPhase _bossPhase = _BossPhase.one;
   _BossAttack _currentBossAttack = _BossAttack.none;

@@ -104,10 +104,10 @@ class _VrmMaidViewState extends State<VrmMaidView> {
 
     // Register unique factory
     WebUtils.registerViewFactory(
-      'vrm-maid-${hashCode}',
+      'vrm-maid-$hashCode',
       (int viewId, {Object? params}) {
         final iframe = WebUtils.createIFrameElement(
-          src: 'vrm/index.html?viewId=${hashCode}',
+          src: 'vrm/index.html?viewId=$hashCode',
           border: 'none',
           width: '100%',
           height: '100%',
@@ -137,7 +137,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
 
         if (type == 'vrm_ready') {
           if (mounted) {
-            print("VRM: Ready received for viewId ${hashCode}");
+            print("VRM: Ready received for viewId $hashCode");
             setState(() => _isReady = true);
             _flushQueue();
             widget.onReady?.call();
@@ -349,7 +349,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
       if (_iframe == null) return;
       final contentWindow = WebUtils.getProperty(_iframe, 'contentWindow');
       if (contentWindow != null) {
-        msg['targetId'] = '${hashCode}';
+        msg['targetId'] = '$hashCode';
         WebUtils.callMethod(
             contentWindow, 'postMessage', [WebUtils.jsify(msg), '*']);
       }
@@ -363,7 +363,7 @@ class _VrmMaidViewState extends State<VrmMaidView> {
     return Stack(
       children: [
         // VRM iframe (Pointer events disabled in WebUtils to fix overlapping hit-tests)
-        HtmlElementView(viewType: 'vrm-maid-${hashCode}'),
+        HtmlElementView(viewType: 'vrm-maid-$hashCode'),
 
         // Flutter Interaction Overlay for VRM (Pats)
         Positioned.fill(

@@ -235,8 +235,9 @@ class _FarawayGameState extends State<FarawayGame> {
     if (card.req == null) return true;
     final r = card.req!;
     if (r == '☀️' && icons.contains('☀️')) return true;
-    if (r == 'WavesWaves' && icons.where((v) => v == 'Waves').length >= 2)
+    if (r == 'WavesWaves' && icons.where((v) => v == 'Waves').length >= 2) {
       return true;
+    }
     if (r == '🌲' && icons.contains('🌲')) return true;
     if (r == '⛰️⛰️' && icons.where((v) => v == '⛰️').length >= 2) return true;
     if (r == '💎' && icons.contains('💎')) return true;

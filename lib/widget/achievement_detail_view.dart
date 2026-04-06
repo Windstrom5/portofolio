@@ -13,7 +13,7 @@ class AchievementStoreDetailView extends StatelessWidget {
   final List<String> screenshots;
 
   const AchievementStoreDetailView({
-    Key? key,
+    super.key,
     required this.certificateName,
     required this.organizationName,
     required this.description,
@@ -21,7 +21,7 @@ class AchievementStoreDetailView extends StatelessWidget {
     required this.date,
     required this.skills,
     this.screenshots = const [],
-  }) : super(key: key);
+  });
 
   Future<void> _downloadCertificate() async {
     html.AnchorElement(href: imagePath)
@@ -281,11 +281,11 @@ class _StatBadge extends StatelessWidget {
   final Color color;
 
   const _StatBadge({
-    Key? key,
+    super.key,
     required this.icon,
     required this.text,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

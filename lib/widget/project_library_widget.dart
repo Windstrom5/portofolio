@@ -75,7 +75,7 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
   final Set<int> _ownedGameIndices = {8, 9, 12, 15, 16, 17, 18, 19}; // Pre-installed games
   final Set<int> _wishlistIndices = {};
 
-  bool _sidebarCollapsed = false;
+  final bool _sidebarCollapsed = false;
 
   // ─── Color Palette (Steam-inspired) ────────────────────────
   static const Color _bgDark = Color(0xFF1B2838);

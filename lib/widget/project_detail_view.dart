@@ -8,7 +8,7 @@ import '../model/project_model.dart';
 class ProjectDetailView extends StatefulWidget {
   final ProjectModel project;
 
-  const ProjectDetailView({Key? key, required this.project}) : super(key: key);
+  const ProjectDetailView({super.key, required this.project});
 
   @override
   State<ProjectDetailView> createState() => _ProjectDetailViewState();

@@ -7,7 +7,7 @@ import '../model/project_model.dart';
 import 'project_detail_view.dart';
 
 class ProjectStoreApp extends StatefulWidget {
-  const ProjectStoreApp({Key? key}) : super(key: key);
+  const ProjectStoreApp({super.key});
 
   @override
   State<ProjectStoreApp> createState() => _ProjectStoreAppState();
@@ -437,7 +437,7 @@ class _ProjectStoreAppState extends State<ProjectStoreApp> {
 class _ProjectStoreCard extends StatelessWidget {
   final ProjectModel project;
 
-  const _ProjectStoreCard({Key? key, required this.project}) : super(key: key);
+  const _ProjectStoreCard({super.key, required this.project});
 
   Color _getStatusColor() {
     switch (project.status) {
@@ -599,7 +599,7 @@ class _ProjectStoreCard extends StatelessWidget {
 
 class _TechChip extends StatelessWidget {
   final String label;
-  const _TechChip({Key? key, required this.label}) : super(key: key);
+  const _TechChip({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,6 @@
 /// Configuration for available WebLLM models.
 /// Users can choose which model to download, or use the default.
+library;
 
 class LlmModel {
   final String id;
