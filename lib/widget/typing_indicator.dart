@@ -60,7 +60,7 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
           color: const Color(0xFFFF6B9D),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF6B9D).withOpacity(0.6),
+              color: const Color(0xFFFF6B9D).withValues(alpha: 0.6),
               blurRadius: 6,
               spreadRadius: 1,
             )
@@ -92,7 +92,7 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF6B9D).withOpacity(0.4),
+                  color: const Color(0xFFFF6B9D).withValues(alpha: 0.4),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -152,12 +152,12 @@ class _FuturisticTypingIndicatorState extends State<FuturisticTypingIndicator>
                     bottomRight: Radius.circular(20),
                   ),
                   border: Border.all(
-                    color: const Color(0xFFFF6B9D).withOpacity(0.3),
+                    color: const Color(0xFFFF6B9D).withValues(alpha: 0.3),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF6B9D).withOpacity(0.15),
+                      color: const Color(0xFFFF6B9D).withValues(alpha: 0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     )

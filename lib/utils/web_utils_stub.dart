@@ -24,6 +24,9 @@ class WebUtils {
 
   static bool hasProperty(dynamic obj, String property) => false;
   static dynamic getProperty(dynamic obj, String property) => null;
+  static void setProperty(dynamic obj, String property, dynamic value) {
+    // No-op
+  }
   static dynamic getPropertyByPath(String path) => null;
   static dynamic callMethod(dynamic obj, String method, List args) => null;
   static dynamic jsify(dynamic obj) => obj;
@@ -40,7 +43,9 @@ class WebUtils {
       String? border,
       String? width,
       String? height,
-      String? allow}) {
+      String? allow,
+      String? sandbox,
+      String? pointerEvents}) {
     return null;
   }
 

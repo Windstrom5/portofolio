@@ -1,9 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:project_test/service/espn_scraper.dart';
+import 'package:project_test/service/official_league_scraper.dart';
+import 'package:project_test/utils/cors_utils.dart';
 import 'package:project_test/widget/hud_components.dart';
 
 class PremierLeagueTable extends StatefulWidget {
@@ -23,35 +26,29 @@ class PremierLeagueTable extends StatefulWidget {
 class _PremierLeagueTableState extends State<PremierLeagueTable>
     with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> teams = [];
+  List<PlayerStat> scorers = [];
+  List<PlayerStat> assists = [];
   bool isLoading = true;
   String? errorMessage;
   String lastUpdated = "Fetching...";
+  String prediction = "Analyzing league table...";
   Timer? _refreshTimer;
   late AnimationController _pulseController;
 
   static const Map<String, Map<String, String>> leagues = {
     "PREMIER LEAGUE": {
-      "id": "1",
-      "season": "777",
       "name_jp": "イングランド・プレミアリーグ",
       "color": "0xFFDA291C"
     },
     "LA LIGA": {
-      "id": "4",
-      "season":
-          "730", // Example ID, might need verification but good for structure
       "name_jp": "スペイン・ラ・リーガ",
       "color": "0xFFDE002B"
     },
     "SERIE A": {
-      "id": "5",
-      "season": "731",
       "name_jp": "イタリア・セリエA",
       "color": "0xFF00529B"
     },
     "BUNDESLIGA": {
-      "id": "2",
-      "season": "732",
       "name_jp": "ドイツ・ブンデスリーガ",
       "color": "0xFFD71920"
     },
@@ -88,47 +85,64 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
     });
 
     try {
-      final leagueData = leagues[currentLeague]!;
-      final url =
-          'https://api.codetabs.com/v1/proxy?quest=https://footballapi.pulselive.com/football/standings?compSeasons=${leagueData["season"]}&competitions=${leagueData["id"]}&pageSize=20';
-      final response = await http.get(Uri.parse(url));
+      // 1. Fetch Standings from ESPN (Scraper)
+      final fetchedStandings = await ESPNScraper.fetchStandings(currentLeague);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List entries = data['tables'][0]['entries'];
+      // 2. Map to expected list of maps
+      final List<Map<String, dynamic>> fetchedTeams =
+          fetchedStandings.map((s) => {
+                "pos": s.pos,
+                "name": s.name,
+                "p": s.p,
+                "pts": s.pts,
+                "zone": s.zone,
+                "logo": s.logoUrl,
+              }).toList();
 
-        final List<Map<String, dynamic>> fetchedTeams = entries.map((entry) {
-          final teamData = entry['team'];
-          final overall = entry['overall'];
-          final annotations = entry['annotations'] as List?;
+      // 3. Fetch Stats from ESPN
+      final stats = await ESPNScraper.fetchStats(currentLeague);
 
-          String zone = "";
-          if (annotations != null && annotations.isNotEmpty) {
-            zone = annotations[0]['type'] ?? "";
+      // 4. Generate Prediction
+      String pred = "Competition ongoing...";
+      if (fetchedTeams.isNotEmpty) {
+        final first = fetchedTeams[0];
+        final second = fetchedTeams.length > 1 ? fetchedTeams[1] : null;
+
+        if (first['p'] >= 34) {
+          // Near end of season
+          if (second != null) {
+            final gap = first['pts'] - second['pts'];
+            final remainingGames = 38 - (first['p'] as int);
+            if (gap > (remainingGames * 3)) {
+              pred = "${first['name'].toString().toUpperCase()} ARE CHAMPIONS!";
+            } else {
+              pred =
+                  "${first['name'].toString().toUpperCase()} FAVOURED TO WIN (${gap}pt lead)";
+            }
           }
-
-          return {
-            "pos": entry['position'],
-            "name": teamData['shortName'] ?? teamData['name'],
-            "p": overall['played'],
-            "pts": overall['points'],
-            "zone": zone,
-          };
-        }).toList();
-
-        if (mounted) {
-          setState(() {
-            teams = fetchedTeams;
-            isLoading = false;
-            lastUpdated = data['timestamp'] != null
-                ? data['timestamp']['label']
-                : "Updated Just Now";
-          });
+        } else {
+          pred = "${first['name'].toString().toUpperCase()} LEADING THE RACE";
         }
-      } else {
-        throw Exception('Failed to load standings');
       }
+
+      if (mounted) {
+        setState(() {
+          teams = fetchedTeams;
+          scorers = stats["scorers"] ?? [];
+          assists = stats["assists"] ?? [];
+          prediction = pred;
+          isLoading = false;
+          lastUpdated = "Updated Live from ESPN";
+        });
+      }
+
+      // 5. Async-patch Official Logos for a "Premium" feel
+      _patchOfficialLogos();
+      
+      // 6. Async-patch top player photos
+      _patchOfficialPlayerPhotos();
     } catch (e) {
+      print("Fetch Error: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -138,49 +152,303 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
     }
   }
 
+  Future<void> _patchOfficialLogos() async {
+    try {
+      final officialLogos = await OfficialLeagueScraper.fetchLeagueLogos(currentLeague);
+      if (officialLogos.isNotEmpty && mounted) {
+        setState(() {
+          for (var team in teams) {
+            final name = team['name'] as String;
+            // Match team names loosely if possible, or direct match
+            if (officialLogos.containsKey(name)) {
+              team['logo'] = officialLogos[name];
+            } else {
+              // Try fuzzy match or partial if needed
+              final match = officialLogos.keys.firstWhere(
+                (k) => k.toLowerCase().contains(name.toLowerCase()) || name.toLowerCase().contains(k.toLowerCase()),
+                orElse: () => "",
+              );
+              if (match.isNotEmpty) {
+                team['logo'] = officialLogos[match];
+              }
+            }
+          }
+          lastUpdated = "Premium Data Stream Active";
+        });
+      }
+    } catch (e) {
+      print("Error patching official logos: $e");
+    }
+  }
+
+  Future<void> _patchOfficialPlayerPhotos() async {
+    if (currentLeague != "PREMIER LEAGUE" && currentLeague != "LA LIGA") return;
+
+    // Only patch top 5 for performance
+    final scorersToPatch = scorers.take(5).toList();
+    final assistsToPatch = assists.take(5).toList();
+
+    for (var player in scorersToPatch) {
+      _patchSinglePlayer(player);
+    }
+    for (var player in assistsToPatch) {
+      _patchSinglePlayer(player);
+    }
+  }
+
+  Future<void> _patchSinglePlayer(PlayerStat player) async {
+    String? officialUrl;
+    if (currentLeague == "PREMIER LEAGUE") {
+      officialUrl = await OfficialLeagueScraper.fetchPremierLeaguePlayerPhoto(player.name);
+    } else if (currentLeague == "LA LIGA") {
+      officialUrl = await OfficialLeagueScraper.fetchLaLigaPlayerPhoto(player.name);
+    }
+
+    if (officialUrl != null && mounted) {
+      setState(() {
+        player.imageUrl = officialUrl!;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.isMinimized) {
       return _buildMinimizedState();
     }
 
-    final leagueColor = Color(int.parse(leagues[currentLeague]!["color"]!));
+    return AnimatedBuilder(
+      key: const ValueKey('premier_league_table_root'),
+      animation: _pulseController,
+      builder: (context, child) {
+        final leagueColor =
+            Color(int.parse(leagues[currentLeague]!["color"]!));
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth.clamp(200.0, 400.0);
         return HUDContainer(
-          width: w,
-          height:
-              (MediaQuery.of(context).size.height * 0.55).clamp(400.0, 520.0),
-          padding: EdgeInsets.symmetric(horizontal: 12.r, vertical: 12.r),
           accentColor: leagueColor,
+          pulse: _pulseController.value,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeaderWidget(leagueColor),
-              SizedBox(height: 8.h),
+              SizedBox(height: 12.h),
               if (isLoading)
                 _buildLoadingState(leagueColor)
               else if (errorMessage != null)
                 _buildErrorState()
               else ...[
-                _buildTableHeader(leagueColor),
-                SizedBox(height: 4.h),
+                _buildPredictionBanner(leagueColor),
+                SizedBox(height: 12.h),
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: teams
-                          .take(10)
-                          .map((team) => _buildTeamRow(team))
-                          .toList(),
+                  child: RepaintBoundary(
+                    child: (MediaQuery.of(context).size.width > 800)
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  flex: 3,
+                                  child: _buildStandingsSection(leagueColor)),
+                              SizedBox(width: 20.w),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildStatsSection(leagueColor)),
+                            ],
+                          )
+                        : SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _buildStandingsSection(leagueColor),
+                                SizedBox(height: 20.h),
+                                _buildStatsSection(leagueColor),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                _buildFooter(leagueColor),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+
+
+  }
+
+  Widget _buildPredictionBanner(Color leagueColor) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
+      decoration: BoxDecoration(
+        color: leagueColor.withOpacity(0.1),
+        border: Border.all(color: leagueColor.withOpacity(0.5), width: 1),
+        borderRadius: BorderRadius.circular(4.r),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome, color: leagueColor, size: 16.sp),
+          SizedBox(width: 10.w),
+          Text(
+            "LEAGUE FORECAST:",
+            style: GoogleFonts.orbitron(
+              color: leagueColor,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              prediction,
+              style: GoogleFonts.vt323(
+                color: Colors.white,
+                fontSize: 16.sp,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStandingsSection(Color leagueColor) {
+    return Column(
+      children: [
+        _buildTableHeader(leagueColor),
+        SizedBox(height: 4.h),
+        Expanded(
+          child: ListView.builder(
+            physics: const BouncingScrollPhysics(),
+            itemCount: teams.length,
+            itemBuilder: (context, index) => _buildTeamRow(teams[index]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsSection(Color leagueColor) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            indicatorColor: leagueColor,
+            labelStyle: GoogleFonts.orbitron(fontSize: 10.sp, fontWeight: FontWeight.bold),
+            tabs: const [
+              Tab(text: "TOP SCORERS"),
+              Tab(text: "TOP ASSISTS"),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildStatsList(scorers, leagueColor, "G"),
+                _buildStatsList(assists, leagueColor, "A"),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsList(List<PlayerStat> stats, Color leagueColor, String unit) {
+    if (stats.isEmpty) {
+      return Center(
+        child: Text(
+          "NO DATA AVAILABLE",
+          style: GoogleFonts.vt323(color: Colors.white38, fontSize: 14.sp),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: stats.length,
+      itemBuilder: (context, index) {
+        final player = stats[index];
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 4.h),
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: leagueColor.withOpacity(0.5), width: 2.w)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28.w,
+                height: 28.w,
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: CachedNetworkImage(
+                  imageUrl: CorsUtils.proxify(player.imageUrl),
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Colors.white10,
+                    child: Center(
+                      child: SizedBox(
+                        width: 12.w,
+                        height: 12.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1,
+                          color: leagueColor.withOpacity(0.3),
+                        ),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => CachedNetworkImage(
+                    imageUrl: CorsUtils.proxify("https://ui-avatars.com/api/?name=${Uri.encodeComponent(player.name)}&background=0D0D0D&color=fff&size=128"),
+                    placeholder: (context, url) => Container(color: Colors.white10),
+                    errorWidget: (context, url, error) => Container(
+                      padding: EdgeInsets.all(2.w),
+                      child: Opacity(
+                        opacity: 0.2,
+                        child: Image.network(
+                          "https://a.espncdn.com/i/headshots/nophoto.png",
+                          color: leagueColor,
+                          colorBlendMode: BlendMode.srcIn,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(height: 8.h),
-                _buildFooter(leagueColor),
-              ],
+              ),
+              SizedBox(width: 8.w),
+              SizedBox(
+                width: 24.w,
+                child: Text(player.rank, style: GoogleFonts.vt323(color: leagueColor, fontSize: 12.sp)),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      player.name.toUpperCase(),
+                      style: GoogleFonts.orbitron(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      player.team,
+                      style: GoogleFonts.vt323(color: Colors.white54, fontSize: 10.sp),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                player.stat,
+                style: GoogleFonts.orbitron(color: leagueColor, fontSize: 13.sp, fontWeight: FontWeight.w900),
+              ),
+              SizedBox(width: 4.w),
+              Text(unit, style: GoogleFonts.vt323(color: Colors.white38, fontSize: 10.sp)),
             ],
           ),
         );
@@ -239,7 +507,12 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w400,
                   letterSpacing: 1,
-                ),
+                ).copyWith(fontFamilyFallback: [
+                  'Hiragino Kaku Gothic ProN',
+                  'MS Gothic',
+                  'Noto Sans JP',
+                  'sans-serif'
+                ]),
               ),
             ],
           ),
@@ -285,7 +558,12 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
             fontSize: 14.sp,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
-          ),
+          ).copyWith(fontFamilyFallback: [
+            'Hiragino Kaku Gothic ProN',
+            'MS Gothic',
+            'Noto Sans JP',
+            'sans-serif'
+          ]),
           onChanged: (String? newValue) {
             if (newValue != null && newValue != currentLeague) {
               setState(() {
@@ -417,8 +695,16 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
                 color: accentColor, isBold: isTop),
           ),
           Expanded(
-            child: _cell(team['name'].toString().toUpperCase(), null,
-                align: TextAlign.left, color: Colors.white, isBold: isTop),
+            child: Row(
+              children: [
+                _buildTeamLogo(team['logo'] ?? "", team['name']?.toString() ?? ""),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _cell(team['name'].toString().toUpperCase(), null,
+                      align: TextAlign.left, color: Colors.white, isBold: isTop),
+                ),
+              ],
+            ),
           ),
           SizedBox(
             width: 30.w,
@@ -538,6 +824,31 @@ class _PremierLeagueTableState extends State<PremierLeagueTable>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTeamLogo(String logoUrl, String teamName) {
+    final proxiedUrl = CorsUtils.proxify(logoUrl);
+    final isSvg = logoUrl.toLowerCase().contains('.svg');
+
+    if (isSvg) {
+      return SvgPicture.network(
+        proxiedUrl,
+        width: 18.w,
+        height: 18.w,
+        placeholderBuilder: (context) => Container(width: 18.w, height: 18.w, color: Colors.white10),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: proxiedUrl,
+      width: 18.w,
+      height: 18.w,
+      placeholder: (context, url) => Container(width: 18.w, height: 18.w, color: Colors.white10),
+      errorWidget: (context, url, error) => CachedNetworkImage(
+        imageUrl: CorsUtils.proxify("https://ui-avatars.com/api/?name=${Uri.encodeComponent(teamName)}&background=0D0D0D&color=fff&rounded=true"),
+        errorWidget: (context, url, error) => Icon(Icons.shield, size: 16.sp, color: Colors.white24),
       ),
     );
   }

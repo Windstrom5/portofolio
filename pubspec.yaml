@@ -61,6 +61,8 @@ dependencies:
   chess_vectors_flutter: ^1.1.0
   web: ^1.1.0
   js: ^0.7.0
+  flutter_svg: ^2.2.4
+  xml: ^6.6.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -124,6 +126,26 @@ flutter:
     - assets/bang dream.gif
     - assets/EnglishScore.jpg
     - assets/profile.jpg
+    - assets/banner_poker.png
+    - assets/banner_chess.png
+    - assets/banner_minesweeper.png
+    - assets/banner_tictactoe.png
+    - assets/banner_rps.png
+    - assets/banner_faraway.png
+    - assets/banner_eldritch.png
+    - assets/banner_cyber.png
+    - assets/banner_void.png
+    - assets/banner_racer.png
+    - assets/banner_hacker.png
+    - assets/banner_root_protocol.png
+    - assets/banner_doom.png
+    - assets/doom/shotgun_idle.png
+    - assets/doom/shotgun_fire.png
+    - assets/doom/imp.png
+    - assets/doom/face_healthy.png
+    - assets/doom/face_hurt.png
+    - assets/doom/wall.png
+    - fonts/
   fonts:
     - family: Retro
       fonts:
@@ -144,3 +166,11 @@ flutter:
           weight: 700
         - asset: fonts/NotoSans-Italic.ttf
           style: italic
+    # NOTE: To resolve "Could not find a set of Noto fonts" warning for JP text,
+    # download NotoSansJP-Regular.ttf and NotoSansJP-Bold.ttf to fonts/ and uncomment below:
+    - family: NotoSansJP
+      fonts:
+        - asset: fonts/NotoSansJP-Regular.ttf
+        - asset: fonts/NotoSansJP-Bold.ttf
+          weight: 700
+

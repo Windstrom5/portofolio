@@ -7,6 +7,8 @@ import 'model/resume_generator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_test/widget/crt_overlay.dart';
 import 'package:project_test/widget/ai_chat_panel.dart';
+import 'package:project_test/widget/news_sidebar_widget.dart';
+import 'package:project_test/widget/premier_league_table.dart';
 import 'package:project_test/widget/Loader_Gate.dart';
 import '../model/chat_message.dart';
 import 'package:project_test/widget/vrm_maid_view.dart';
@@ -16,11 +18,10 @@ import 'dart:convert'; // jsonDecode
 import 'package:http/http.dart' as http; // Open-Meteo API calls
 import 'utils/web_utils.dart';
 import '../llm/llm_service.dart';
+import 'llm/model_config.dart';
 import 'widget/poker.dart';
 import 'widget/chess_game.dart';
 import 'widget/discord_activity_widget.dart';
-import 'widget/premier_league_table.dart';
-
 import 'model/work_experience_model.dart';
 import 'model/project_model.dart';
 import 'model/cv_models.dart';
@@ -31,6 +32,17 @@ import 'widget/tech_marquee.dart';
 import 'widget/project_store.dart';
 import 'widget/vn_dialogue_bubble.dart';
 import 'widget/image_processor.dart';
+import 'widget/faraway_game.dart';
+import 'widget/minesweeper_app.dart';
+import 'widget/linux_context_menu.dart';
+import 'widget/gaming_showcase_widget.dart';
+import 'widget/project_library_widget.dart';
+import 'game/eldritch_query_game.dart';
+import 'widget/neon_racer_game.dart';
+import 'widget/void_rpg_game.dart';
+import 'widget/doom_game.dart';
+import 'widget/hacker_tycoon_game.dart';
+import 'package:universal_html/html.dart' as html;
 
 void main() {
   runApp(MyApp());
@@ -66,6 +78,28 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
+class ActiveWindow {
+  final int id;
+  final String title;
+  final IconData icon;
+
+  ActiveWindow({
+    required this.id,
+    required this.title,
+    required this.icon,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ActiveWindow &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
 Widget _systemInfoChip(IconData icon, String label) {
   return Container(
     padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -85,9 +119,25 @@ Widget _systemInfoChip(IconData icon, String label) {
   );
 }
 
+// ─── Window System Data Model ───────────────────────────────
+class WindowInstance {
+  final int id; // Corresponds to _selectedIndex values
+  final String title;
+  Offset position;
+  bool isMaximized;
+
+  WindowInstance({
+    required this.id,
+    required this.title,
+    this.position = const Offset(100, 100),
+    this.isMaximized = false,
+  });
+}
+
 class _HomePageState extends State<HomePage> {
   List<ChatMessage> chatHistory = [];
   int _selectedIndex = -1;
+  List<WindowInstance> _openWindows = []; // Stack of active windows
   String _currentTime = "";
   List<String> additionalTerminalOutput = [];
   final TextEditingController _terminalController = TextEditingController();
@@ -111,8 +161,67 @@ class _HomePageState extends State<HomePage> {
   int _fakeCpuLoad = 35; // we'll animate it a bit
   Timer? _cpuLoadTimer; // Timer reference for proper disposal
 
-  bool _plTableMinimized = true;
+
   bool _showSpotify = false;
+  bool _isAiChatOpen = false;
+  Timer? _typingTimer;
+  bool _showPatEffect = false;
+  int _visitorCount = 0;
+  Timer? _visitorTimer;
+
+  // VRM voice control state (managed in main.dart, outside IgnorePointer)
+  bool _isVrmMuted = false;
+  bool _isVrmMicActive = false;
+  Timer? _idleTimer;
+  DateTime? _lastBlockingSpeechTime;
+  bool _isVrmBlocked = false;
+  
+  // Play Time Tracking
+  final Map<int, int> _playTimeSeconds = {};
+  final Map<int, DateTime> _startTimes = {};
+
+  // Context Menu State
+  Offset? _contextMenuPosition;
+
+  void _showContextMenu(Offset position) {
+    setState(() {
+      _contextMenuPosition = position;
+    });
+  }
+
+  void _hideContextMenu() {
+    if (_contextMenuPosition != null) {
+      setState(() {
+        _contextMenuPosition = null;
+      });
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'terminal':
+        _terminalFocusNode.requestFocus();
+        break;
+      case 'profile':
+        setState(() => _selectedIndex = 4);
+        break;
+      case 'projects':
+        setState(() => _selectedIndex = 1);
+        break;
+      case 'mute':
+        setState(() => _isVrmMuted = !_isVrmMuted);
+        break;
+      case 'sysinfo':
+        _processCommand('neofetch');
+        break;
+      case 'refresh':
+        _loadRealWeather();
+        break;
+    }
+  }
+
+  final FocusNode _terminalFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -121,6 +230,17 @@ class _HomePageState extends State<HomePage> {
     _updateTime();
     _cpuCores = WebUtils.hardwareConcurrency;
     _ramGb = double.tryParse(WebUtils.deviceMemory) ?? 8.0;
+
+    _terminalController.addListener(() {
+      if (_terminalController.text.isNotEmpty) {
+        _vrmController.setActivity('typing');
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(milliseconds: 1500), () {
+          _vrmController.setActivity('idle');
+        });
+      }
+    });
+
 // In initState(), after other timers:
     _cpuLoadTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!mounted) {
@@ -131,12 +251,62 @@ class _HomePageState extends State<HomePage> {
         _fakeCpuLoad = 30 + Random().nextInt(21); // Varies 30-50%
       });
     });
+
+    // Visitor counter - starts at random base, increments randomly
+    _visitorCount = 1247 + Random().nextInt(300);
+    _visitorTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _visitorCount += 1 + Random().nextInt(3);
+      });
+    });
+
+    // Disable Default browser context menu for Web
+    if (kIsWeb) {
+      html.document.onContextMenu.listen((event) => event.preventDefault());
+    }
+    _loadPlayTime();
+    _vrmController.onSpeakHook = _updateGlobalDialogue;
+  }
+
+  void _loadPlayTime() {
+    try {
+      final saved = html.window.localStorage['play_time_cache'];
+      if (saved != null) {
+        final Map<String, dynamic> decoded = jsonDecode(saved);
+        decoded.forEach((key, value) {
+          _playTimeSeconds[int.parse(key)] = value as int;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading play time: $e");
+    }
+  }
+
+  void _savePlayTime() {
+    try {
+      final Map<String, int> encoded = {};
+      _playTimeSeconds.forEach((key, value) {
+        encoded[key.toString()] = value;
+      });
+      html.window.localStorage['play_time_cache'] = jsonEncode(encoded);
+    } catch (e) {
+      debugPrint("Error saving play time: $e");
+    }
   }
 
   @override
   void dispose() {
     _cpuLoadTimer?.cancel();
+    _typingTimer?.cancel();
+    _visitorTimer?.cancel();
+    _idleTimer?.cancel();
+    _idleTimer?.cancel();
     _terminalController.dispose();
+    _terminalFocusNode.dispose();
     _terminalScrollController.dispose();
     super.dispose();
   }
@@ -155,34 +325,138 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // ═══════════════════════════════════════════
+  // VRM IDLE BEHAVIOR & AI GREETING
+  // ═══════════════════════════════════════════
+
+  void _startIdleBehavior() {
+    _resetIdleTimer();
+  }
+
+  Future<void> _generateAiGreeting() async {
+    try {
+      final greeting = await LlmService.ask(
+        'The visitor just opened the portfolio website. Give a short, cute greeting as Sakura the maid. Keep it to 1-2 sentences max.',
+      );
+      if (mounted && greeting.isNotEmpty) {
+        _vrmController.speak('', english: greeting, emotion: 'joy');
+      }
+    } catch (_) {
+      // Fallback to static greeting if AI fails
+      _vrmController.speak(
+        "システム起動完了！ようこそ、お客様！♡",
+        english: "System initialized. Welcome, Visitor! ♡",
+        emotion: 'joy',
+      );
+    }
+  }
+
+  Future<void> _generateIdleChatter() async {
+    try {
+      final idlePrompts = [
+        'Say something cute and short while waiting for the visitor to interact. 1 sentence max.',
+        'The visitor seems idle. Give a tiny playful comment to get their attention. 1 sentence.',
+        'Mention one of Master Angga\'s projects briefly and cutely. 1 sentence max.',
+        'Hum or make a cute idle sound/comment. Very short, 1 sentence.',
+      ];
+      final prompt = idlePrompts[Random().nextInt(idlePrompts.length)];
+      final reply = await LlmService.ask(prompt);
+      if (mounted && reply.isNotEmpty && !_isAiChatOpen) {
+        // Random idle animation
+        final animations = ['wave', 'idle'];
+        final anim = animations[Random().nextInt(animations.length)];
+        if (anim == 'wave') _vrmController.wave();
+        _vrmController.speak('', english: reply, emotion: 'neutral');
+      }
+    } catch (_) {
+      // Silently fail — idle chatter is non-critical
+    }
+  }
+
+  Widget _buildVnTrayIcon({
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color color,
+    required bool isActive,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isActive ? color.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.8),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+          ),
+          border: Border.all(
+            color: isActive ? color : color.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                  ),
+                ]
+              : [],
+        ),
+        child: Icon(
+          icon,
+          color: isActive ? Colors.white : color.withOpacity(0.8),
+          size: 18,
+        ),
+      ),
+    );
+  }
+
+
   Future<void> _loadRealWeather() async {
     if (!kIsWeb) {
-      setState(() {
-        _weatherDesc = "Web only";
-        _locationText = "N/A";
-      });
+      if (mounted) {
+        setState(() {
+          _weatherDesc = "Web only";
+          _locationText = "N/A";
+        });
+      }
       return;
     }
 
-    try {
-      // First try IP-based geolocation (more reliable, no permissions needed)
-      // wttr.in automatically uses visitor's IP for location
-      final url = 'https://wttr.in?format=j1';
-      await _fetchAndParseWttr(url);
-    } catch (e) {
-      print('Weather API error: $e');
-      // Try with a fallback location
+    int retryCount = 0;
+    const int maxRetries = 3;
+    bool success = false;
+
+    while (retryCount < maxRetries && !success) {
       try {
-        final fallbackUrl = 'https://wttr.in/Yogyakarta?format=j1';
-        await _fetchAndParseWttr(fallbackUrl);
-      } catch (e2) {
-        print('Weather fallback error: $e2');
-        setState(() {
-          _weatherTemp = "—";
-          _weatherIcon = "⚠️";
-          _weatherDesc = "Weather unavailable";
-          _locationText = "—";
-        });
+        final url = 'https://wttr.in?format=j1';
+        await _fetchAndParseWttr(url);
+        success = true;
+      } catch (e) {
+        retryCount++;
+        print('Weather API attempt $retryCount failed: $e');
+        if (retryCount < maxRetries) {
+          // Exponential backoff: 1s, 2s, 4s...
+          await Future.delayed(Duration(seconds: 1 * (1 << (retryCount - 1))));
+        } else {
+          // Final fallback
+          try {
+            final fallbackUrl = 'https://wttr.in/Yogyakarta?format=j1';
+            await _fetchAndParseWttr(fallbackUrl);
+            success = true;
+          } catch (e2) {
+            print('Weather fallback error: $e2');
+            if (mounted) {
+              setState(() {
+                _weatherTemp = "—";
+                _weatherIcon = "⚠️";
+                _weatherDesc = "Weather unavailable";
+                _locationText = "—";
+              });
+            }
+          }
+        }
       }
     }
   }
@@ -290,21 +564,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   void openAiChat() {
-    setState(() {
-      _llmLoading = true;
-      _llmProgress = 0;
-    });
+    // Check if model is already loaded or 'none' (offline mode)
+    final isModelReady = LlmService.isReady;
+    final isOffline = ModelConfig.activeModelId == 'none';
 
-    LlmService.init((p) {
+    if (isModelReady || isOffline) {
+      // Model already downloaded on Loader Gate or offline — open chat directly
       setState(() {
-        _llmProgress = p;
+        _llmLoading = false;
+        _llmProgress = 100;
       });
-      if (p == 100) {
+    } else {
+      // Model not yet loaded — show download progress
+      setState(() {
+        _llmLoading = true;
+        _llmProgress = 0;
+      });
+
+      LlmService.init((p) {
         setState(() {
-          _llmLoading = false;
+          _llmProgress = p;
         });
-      }
-    });
+        if (p >= 100) {
+          setState(() {
+            _llmLoading = false;
+          });
+        }
+      });
+    }
 
     showDialog(
       context: context,
@@ -313,7 +600,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(20),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8), // Sharper corners for OS feel
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             width: 1000,
             height: 500,
@@ -338,29 +625,40 @@ class _HomePageState extends State<HomePage> {
                 else if (kIsWeb)
                   Row(
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 300,
                         height: 500,
-                        child: VrmMaidView(),
+                        child: VrmMaidView(showVoiceControls: false),
                       ),
                       Expanded(
-                        child: AiChatPanel(chatHistory: chatHistory),
+                        child: AiChatPanel(
+                          chatHistory: chatHistory,
+                          onCommand: (cmd) {
+                            Navigator.of(context).pop();
+                            _processCommand(cmd);
+                          },
+                        ),
                       ),
                     ],
                   )
                 else
-                  AiChatPanel(chatHistory: chatHistory),
+                  AiChatPanel(
+                    chatHistory: chatHistory,
+                    onCommand: (cmd) {
+                      Navigator.of(context).pop();
+                      _processCommand(cmd);
+                    },
+                  ),
                 Positioned(
                   top: 10,
                   right: 10,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.of(context).pop();
-                      // Cancel LLM init if possible, but since it's static, it's fine
                     },
                     child: Container(
                       decoration: const BoxDecoration(
-                        color: Colors.red, // OS Close button style
+                        color: Colors.red,
                         shape: BoxShape.circle,
                       ),
                       padding: const EdgeInsets.all(4),
@@ -374,7 +672,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() => _isAiChatOpen = false);
+      }
+    });
+
+    setState(() => _isAiChatOpen = true);
   }
 
   Future<void> _launchEmail() async {
@@ -412,7 +716,7 @@ class _HomePageState extends State<HomePage> {
       _showHelp();
     } else if (cmd == "ls") {
       additionalTerminalOutput.add(
-          "projects  certificates  education  profile  resume.pdf  tic_tac_toe  rock_paper_scissors");
+          "projects  certificates  education  profile  resume.pdf  tic_tac_toe  rock_paper_scissors  poker  chess  faraway  minesweeper  image_lab");
     } else if (cmd.startsWith("open ")) {
       String target = cmd.substring(5).trim();
       int? index;
@@ -430,20 +734,49 @@ class _HomePageState extends State<HomePage> {
         index = 6;
       else if (target == "rock_paper_scissors" || target == "rps")
         index = 7;
-      else if (target == "resume.pdf") {
-        final resumePdf = ResumePdf();
-        final pdfBytes = await resumePdf.generate(
+      else if (target == "poker")
+        index = 8;
+      else if (target == "chess")
+        index = 9;
+      else if (target == "faraway")
+        index = 11;
+      else if (target == "minesweeper" || target == "mines")
+        index = 12;
+      else if (target == "image" || target == "image_lab")
+        index = 10;
+      else if (target.startsWith("resume.pdf")) {
+        final bool isElegant =
+            target.contains("--elegant") || target.contains("-e");
+        final bool isPro = target.contains("--pro") || target.contains("-p");
+
+        String themeType = 'midnight';
+        String themeName = 'Midnight Cyber (Dark)';
+        String fileName = 'resume_angga.pdf';
+
+        if (isElegant) {
+          themeType = 'elegant';
+          themeName = 'Professional Elegance (Light)';
+          fileName = 'resume_angga_elegant.pdf';
+        } else if (isPro) {
+          themeType = 'executive_zen';
+          themeName = 'Executive Zen (Ultra-Premium)';
+          fileName = 'resume_angga_pro.pdf';
+        }
+
+        final pdfBytes = await ResumePdf().generate(
           projects: allProjects,
           experiences: allWorkExperiences,
           education: allEducation,
           achievements: allAchievements,
+          themeType: themeType,
         );
-        resumePdf.downloadPdfWeb(pdfBytes, 'resume_angga.pdf');
-        additionalTerminalOutput.add("Downloading resume.pdf...");
+        ResumePdf.downloadPdfWeb(pdfBytes, fileName);
+        additionalTerminalOutput.add("Generating $themeName resume...");
+        additionalTerminalOutput.add("Downloading $fileName...");
         return;
       }
 
-      if (index != null) {
+      if (index != -1) {
         setState(() {
           _selectedIndex = index!;
         });
@@ -638,6 +971,100 @@ class _HomePageState extends State<HomePage> {
         " 4242 pts/0    00:00:00 rock_paper_scissors",
         "(only fun fake processes — real ones hidden)",
       ]);
+    } else if (cmd.startsWith("zutomayo") ||
+        cmd.startsWith("ztmy") ||
+        cmd.startsWith("jpop") ||
+        cmd.startsWith("playlist")) {
+      final parts = cmd.split(" ");
+      final target = parts.length > 1 ? parts[1].toLowerCase() : "";
+
+      if (target == "zutomayo" || target == "ztmy") {
+        additionalTerminalOutput.addAll([
+          "",
+          "  ✦ ずっと真夜中でいいのに。 (ZUTOMAYO)",
+          "  ► Frontperson: ACA-Ne (ACAね)",
+          "  ► Secret Weapon: Open Toaster & CRT TVs",
+          "  ► Vibe: Slap bass, upbeat pop melodies masking melancholic lyrics.",
+          "  ► Breakthrough: \"Byoushin wo Kamu\" (2018)",
+          "  [||||||||||||||||||] 100% Midnight Energy 🌙",
+          "",
+        ]);
+      } else if (target == "yoasobi") {
+        additionalTerminalOutput.addAll([
+          "",
+          "  ✦ YOASOBI",
+          "  ► Members: Ayase (Producer) & ikura (Vocals)",
+          "  ► Concept: \"Turning novels into music\"",
+          "  ► Vibe: High-bpm electropop with deceptively dark undertones.",
+          "  ► Breakthrough: \"Yoru ni Kakeru\" (2019)",
+          "  [||||||||||||||||||] 100% Novel-to-Pop 📖",
+          "",
+        ]);
+      } else if (target == "ado") {
+        additionalTerminalOutput.addAll([
+          "",
+          "  ✦ Ado (アド)",
+          "  ► Status: Utaite Icon / Uta Vocalist",
+          "  ► Voice Range: Absolute. Growls to angelic highs.",
+          "  ► Vibe: Rebellious, raw emotion, unmatched vocal dexterity.",
+          "  ► Breakthrough: \"Usseewa\" (2020) at age 17",
+          "  [||||||||||||||||||] 100% Rebellious Energy 💥",
+          "",
+        ]);
+      } else if (target == "yorushika") {
+        additionalTerminalOutput.addAll([
+          "",
+          "  ✦ ヨルシカ (Yorushika)",
+          "  ► Members: n-buna (Producer) & suis (Vocals)",
+          "  ► Motif: Summer nostalgia, literature, and farewells.",
+          "  ► Vibe: Acoustic-rock blending into emotional, poetic masterpieces.",
+          "  ► Breakthrough: \"Dakara Boku wa Ongaku wo Yameta\" (2019)",
+          "  [||||||||||||||||||] 100% Summer Melancholy 🌻",
+          "",
+        ]);
+      } else if (target == "yurrycanon" ||
+          target == "yurry" ||
+          target == "tsukuyomi") {
+        additionalTerminalOutput.addAll([
+          "",
+          "  ✦ ユーリィ・カノン (Yurry Canon / Tsukuyomi)",
+          "  ► Status: Vocaloid Producer / Band Founder",
+          "  ► Signature: High-speed piano, complex rhythms, theatrical rock.",
+          "  ► Vibe: Frenetic energy mixed with deep mythological storytelling.",
+          "  ► Breakthrough: \"Dareka no Shinzou wo Tsukutta Koto ga Aru ka\" (2018)",
+          "  [||||||||||||||||||] 100% Theatrical Rock 🎭",
+          "",
+        ]);
+      } else {
+        // Main List
+        additionalTerminalOutput.addAll([
+          "",
+          "  ♪ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          "  ♪  MIDNIGHT J-POP RADIO  🌙  // windstrom5.fm",
+          "  ♪ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          "  (Type 'jpop [name]' for detailed artist files!)",
+          "",
+          "  ♪ ずっと真夜中でいいのに。 (ZUTOMAYO)",
+          "    ∟ 勘冴えて悔しいわ // 暗く黒く // 秒針を噛む",
+          "",
+          "  ♪ YOASOBI",
+          "    ∟ 夜に駆ける // アイドル // 怪物",
+          "",
+          "  ♪ Ado",
+          "    ∟ うっせぇわ // 踊 // 唱",
+          "",
+          "  ♪ ヨルシカ (Yorushika)",
+          "    ∟ だから僕は音楽を辞めた // ただ君に晴れ",
+          "",
+          "  ♪ ユーリィ・カノン (Yurry Canon / Tsukuyomi)",
+          "    ∟ だれかの心臓になれたなら // 月詠み",
+          "",
+          "  ♪ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          "  🌙 Now entering: midnight mode",
+          "  ✦ \"The night is young and the music never stops...\"",
+          "",
+        ]);
+      }
     } else {
       additionalTerminalOutput.add("Command not found: $cmd    (try 'help')");
     }
@@ -651,7 +1078,9 @@ class _HomePageState extends State<HomePage> {
       additionalTerminalOutput.addAll([
         "Available commands:",
         "  ls                     list sections & files",
-        "  open <name>            open section/file (projects, tic_tac_toe, resume.pdf …)",
+        "  open <name>            open section/file (projects, tic_tac_toe, faraway, minesweeper…)",
+        "                         (Use 'open resume.pdf --elegant' for Professional Elegance)",
+        "                         (Use 'open resume.pdf --pro' for Executive Zen Ultra-Premium)",
         "  ──────────────────────────────────────────────",
         "  whoami                 show current user",
         "  pwd                    print working directory",
@@ -680,9 +1109,13 @@ class _HomePageState extends State<HomePage> {
   // ==========================================
   // 🖥️ LINUX WINDOW FRAME WIDGET
   // ==========================================
-  Widget _buildWindowFrame({required Widget child, required String title}) {
-    return Center(
-      child: Container(
+  Widget _buildWindowFrame({
+    required Widget child,
+    required String title,
+    required int windowId,
+    required Function(Offset) onDrag,
+  }) {
+      return Container(
         width: 1000.w,
         height: 650.h,
         decoration: BoxDecoration(
@@ -700,51 +1133,53 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             // --- Title Bar ---
-            Container(
-              height: 35.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFF282a36),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8.r),
-                  topRight: Radius.circular(8.r),
-                ),
-                border:
-                    Border(bottom: BorderSide(color: const Color(0xFF44475a))),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: Row(
-                children: [
-                  // Traffic Lights
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedIndex = -1);
-                        },
-                        child: CircleAvatar(
-                            radius: 6.r,
-                            backgroundColor: const Color(0xFFFF5555)), // Close
-                      ),
-                      SizedBox(width: 8.w),
-                      CircleAvatar(
-                          radius: 6.r,
-                          backgroundColor: const Color(0xFFF1FA8C)), // Minimize
-                      SizedBox(width: 8.w),
-                      CircleAvatar(
-                          radius: 6.r,
-                          backgroundColor: const Color(0xFF50FA7B)), // Maximize
-                    ],
+            GestureDetector(
+              onPanUpdate: (details) => onDrag(details.delta),
+              child: Container(
+                height: 35.h,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF282a36),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8.r),
+                    topRight: Radius.circular(8.r),
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        "user@windstrom5: ~/$title",
-                        style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                  border:
+                      Border(bottom: BorderSide(color: const Color(0xFF44475a))),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                child: Row(
+                  children: [
+                    // Traffic Lights
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            _removeWindow(windowId);
+                          },
+                          child: CircleAvatar(
+                              radius: 6.r,
+                              backgroundColor: const Color(0xFFFF5555)), // Close
+                        ),
+                        SizedBox(width: 8.w),
+                        CircleAvatar(
+                            radius: 6.r,
+                            backgroundColor: const Color(0xFFF1FA8C)), // Minimize
+                        SizedBox(width: 8.w),
+                        CircleAvatar(
+                            radius: 6.r,
+                            backgroundColor: const Color(0xFF50FA7B)), // Maximize
+                      ],
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          "user@windstrom5: ~/$title",
+                          style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                        ),
                       ),
                     ),
-                  ),
-                  // Removed BACK / CLOSE Button (Traffic lights are sufficient)
-                ],
+                  ],
+                ),
               ),
             ),
             // --- Content ---
@@ -758,7 +1193,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
-        ),
       ),
     );
   }
@@ -842,27 +1276,82 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     SizedBox(height: 15.h),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final resumePdf = ResumePdf();
-                        final pdfBytes = await resumePdf.generate(
-                          projects: [],
-                          experiences: [],
-                          education: [],
-                          achievements: [],
-                        );
-                        resumePdf.downloadPdfWeb(pdfBytes, 'resume_angga.pdf');
-                      },
-                      icon: const Icon(Icons.download, size: 16),
-                      label: const Text("sudo apt-get install resume.pdf"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade800,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 15.w, vertical: 15.h),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4)),
-                      ),
+                    Wrap(
+                      spacing: 15.w,
+                      runSpacing: 10.h,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final pdfBytes = await ResumePdf().generate(
+                              projects: allProjects,
+                              experiences: allWorkExperiences,
+                              education: allEducation,
+                              achievements: allAchievements,
+                              themeType: 'midnight',
+                            );
+                            ResumePdf.downloadPdfWeb(
+                                pdfBytes, 'resume_angga.pdf');
+                          },
+                          icon: const Icon(Icons.download, size: 16),
+                          label: const Text("apt-get install resume.pdf"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade800,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final pdfBytes = await ResumePdf().generate(
+                              projects: allProjects,
+                              experiences: allWorkExperiences,
+                              education: allEducation,
+                              achievements: allAchievements,
+                              themeType: 'elegant',
+                            );
+                            ResumePdf.downloadPdfWeb(
+                                pdfBytes, 'resume_angga_elegant.pdf');
+                          },
+                          icon: const Icon(Icons.business_center, size: 16),
+                          label: const Text(
+                              "apt-get install resume.pdf --elegant"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A365D), // Navy
+                            foregroundColor:
+                                const Color(0xFFFCFBF9), // Off-white
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final pdfBytes = await ResumePdf().generate(
+                              projects: allProjects,
+                              experiences: allWorkExperiences,
+                              education: allEducation,
+                              achievements: allAchievements,
+                              themeType: 'executive_zen',
+                            );
+                            ResumePdf.downloadPdfWeb(
+                                pdfBytes, 'resume_angga_pro.pdf');
+                          },
+                          icon: const Icon(Icons.stars, size: 16),
+                          label: const Text("apt-get install resume.pdf --pro"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFC5A059), // Gold
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -913,99 +1402,223 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _profileInfoCard(IconData icon, String title, String value) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.cyanAccent, size: 18.sp),
-          SizedBox(width: 12.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: TextStyle(color: Colors.white54, fontSize: 11.sp)),
-              Text(value,
-                  style: TextStyle(color: Colors.white, fontSize: 13.sp)),
-            ],
-          )
-        ],
-      ),
+  void _addWindow(int index) {
+    if (index == -1) return;
+    
+    // Check if window already exists
+    final existing = _openWindows.indexWhere((w) => w.id == index);
+    if (existing != -1) {
+      // Bring to front
+      setState(() {
+        final win = _openWindows.removeAt(existing);
+        _openWindows.add(win);
+        _selectedIndex = index;
+      });
+      return;
+    }
+
+    // --- Session Tracking ---
+    // If it's a game (index >= 6), track start time
+    if (index >= 6) {
+      _startTimes[index] = DateTime.now();
+    }
+
+    // Create new window
+    final title = _getTitle(index);
+
+    // Default cascading position
+    double left = 400.0 + (_openWindows.length * 40).w;
+    double top = 150.0 + (_openWindows.length * 40).h;
+
+    // Optimization for Game Lab / Desktop Dashboard (more centered)
+    if (index == -2) {
+      left = 250.w;
+      top = 100.h;
+    }
+
+    final win = WindowInstance(
+      id: index,
+      title: title,
+      position: Offset(left, top),
     );
+
+    setState(() {
+      _openWindows.add(win);
+      _selectedIndex = index;
+    });
   }
 
-  Widget _skillChip(String name, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.3), color.withOpacity(0.1)],
-        ),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Text(
-        name,
-        style: TextStyle(
-          color: color,
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
+  void _removeWindow(int index) {
+    // --- Session Calculation ---
+    if (_startTimes.containsKey(index)) {
+      final start = _startTimes.remove(index);
+      final duration = DateTime.now().difference(start!).inSeconds;
+      _playTimeSeconds[index] = (_playTimeSeconds[index] ?? 0) + duration;
+      _savePlayTime();
+    }
+
+    setState(() {
+      _openWindows.removeWhere((w) => w.id == index);
+      if (_openWindows.isNotEmpty) {
+        _selectedIndex = _openWindows.last.id;
+      } else {
+        _selectedIndex = -1;
+      }
+    });
+  }
+
+  Widget _getContentForIndex(int index) {
+    switch (index) {
+      case -2: // Game Lab
+        return ProjectLibraryWidget(
+          currentActiveIndex: _selectedIndex,
+          runningGameIds: _openWindows.map((w) => w.id).toList(), 
+          onLaunchProject: _addWindow,
+          onStopProject: _removeWindow,
+          playTimeSeconds: _playTimeSeconds,
+          onClose: () => _removeWindow(-2),
+        );
+      case 0:
+        return _buildTerminalHome();
+      case 1:
+        return const ProjectStoreApp();
+      case 2:
+        return _buildCertificatesView();
+      case 3:
+        return _buildEducationView();
+      case 4:
+        return _buildProfileView();
+      case 5:
+        return _buildExperienceView();
+      case 6: // Tic Tac Toe
+        return _buildTicTacToeView();
+      case 7: // Rock Paper Scissors
+        return _buildRpsView();
+      case 8: // Poker
+        return _buildPokerView();
+      case 9: // Chess
+        return _buildChessView();
+      case 10: // Image Lab
+        return const ImageProcessor();
+      case 11: // Faraway
+        return const FarawayGame();
+      case 12: // Minesweeper
+        return const MinesweeperApp();
+      case 13: // Soccer Dashboard
+        return _buildSoccerView();
+      case 14: // Gaming Showcase
+        return _buildShowcaseView();
+      case 15: // Eldritch SQL
+        return EldritchQueryGame(
+          onClose: () => _removeWindow(15),
+        );
+      case 16: // DOOM (1993)
+        return DoomGame(onSpeak: _updateGlobalDialogue);
+      case 17: // Neon Racer
+        return NeonRacerGame(onSpeak: _updateGlobalDialogue);
+      case 18: // Void RPG
+        return VoidRpgGame(onSpeak: _updateGlobalDialogue);
+      case 19: // Hacker Tycoon
+        return HackerTycoonGame(onSpeak: _updateGlobalDialogue);
+      default:
+        return Container();
+    }
   }
 
   // ==========================================
   // 📂 CONTENT SWITCHER
   // ==========================================
   Widget _buildBodyContent() {
-    if (_selectedIndex == -1) {
+    if (_openWindows.isEmpty) {
       return const SizedBox();
     }
-    Widget content;
-    switch (_selectedIndex) {
-      case 0:
-        content = _buildTerminalHome();
-        break;
-      case 1:
-        content = const ProjectStoreApp();
-        break;
-      case 2:
-        content = _buildCertificatesView();
-        break;
-      case 3:
-        content = _buildEducationView();
-        break;
-      case 4:
-        content = _buildProfileView();
-        break;
-      case 5:
-        content = _buildExperienceView();
-        break;
-      case 6: // Tic Tac Toe
-        content = _buildTicTacToeView();
-        break;
-      case 7: // Rock Paper Scissors
-        content = _buildRpsView();
-        break;
-      case 8: // Poker
-        content = _buildPokerView();
-        break;
-      case 9: // Chess
-        content = _buildChessView();
-        break;
-      case 10: // Image Lab
-        content = const ImageProcessor();
-        break;
-      default:
-        content = Container();
-    }
-    return _buildWindowFrame(title: _getTitle(_selectedIndex), child: content);
+
+    return Stack(
+      children: _openWindows.map((win) {
+        return Positioned(
+          key: ValueKey("win_${win.id}"),
+          left: win.position.dx,
+          top: win.position.dy,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent, // Allow taps to pass through to content
+            onTap: () {
+              if (_openWindows.last.id != win.id) {
+                setState(() {
+                  _openWindows.removeWhere((w) => w.id == win.id);
+                  _openWindows.add(win);
+                  _selectedIndex = win.id;
+                });
+              }
+            },
+            child: _buildWindowFrame(
+              title: win.title,
+              child: _getContentForIndex(win.id),
+              windowId: win.id,
+              onDrag: (details) {
+                setState(() {
+                  win.position += details;
+
+                  // --- Reactive Blocking Logic (Synced to Title Bar Drag) ---
+                  final bool wasBlocked = _isVrmBlocked;
+                  final double screenHeight = MediaQuery.of(context).size.height;
+                  final Rect sakuraZone =
+                      Rect.fromLTWH(20.w, screenHeight - 425.h, 305.w, 405.h);
+
+                  bool currentlyBlocked = false;
+                  for (var w in _openWindows) {
+                    final Rect wRect =
+                        Rect.fromLTWH(w.position.dx, w.position.dy, 1000.w, 650.h);
+                    if (wRect.overlaps(sakuraZone)) {
+                      currentlyBlocked = true;
+                      break;
+                    }
+                  }
+
+                  _isVrmBlocked = currentlyBlocked;
+                  if (wasBlocked != _isVrmBlocked) {
+                    _vrmController.setEmotion(_isVrmBlocked ? 'fun' : 'joy');
+                    if (_isVrmBlocked) {
+                      _vrmController.wave();
+                    }
+                  }
+
+                  // Speech Logic inside onDrag
+                  if (_isVrmBlocked) {
+                    final now = DateTime.now();
+                    if (_lastBlockingSpeechTime == null ||
+                        now.difference(_lastBlockingSpeechTime!) >
+                            const Duration(seconds: 20)) {
+                      _lastBlockingSpeechTime = now;
+                      final lines = [
+                        "Master, you're blocking Sakura! I'm back here! ♪",
+                        "Wait! I can't see anything with this window here... ♡",
+                        "Excuse me, Visitor? You're hiding me! ~",
+                        "Is this a game of hide and seek? ♪",
+                      ];
+                      final linesJp = [
+                        "ちょっと！Sakuraが見えなくなっちゃうよ～！♪",
+                        "待って！画面が見えないよ、お客様！♡",
+                        "あ、お客様？前の方がいいな～！～",
+                        "これって、かくれんぼかな？♪",
+                      ];
+                      final r = Random().nextInt(lines.length);
+                      _vrmController.speak(linesJp[r],
+                          english: lines[r], emotion: 'fun');
+                    }
+                  }
+
+                  // Focus window on drag
+                  if (_openWindows.last.id != win.id) {
+                    _openWindows.removeWhere((w) => w.id == win.id);
+                    _openWindows.add(win);
+                  }
+                });
+              },
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 
   Widget _buildCertificatesView() {
@@ -1557,7 +2170,78 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 20.h),
+
+                // === ANIMATED STATS ROW ===
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _animatedStatCounter("5+", "PROJECTS", Colors.cyanAccent),
+                    _animatedStatCounter(
+                        "2+", "YEARS", const Color(0xFF50FA7B)),
+                    _animatedStatCounter(
+                        "10+", "TECH", const Color(0xFFFF79C6)),
+                  ],
+                ),
+                SizedBox(height: 20.h),
+
+                // === SOCIAL LINKS ROW ===
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _socialLink(FontAwesomeIcons.github, "GitHub",
+                        "https://github.com/Windstrom5"),
+                    SizedBox(width: 16.w),
+                    _socialLink(FontAwesomeIcons.linkedin, "LinkedIn",
+                        "https://linkedin.com/in/angganugraha"),
+                    SizedBox(width: 16.w),
+                    _socialLink(FontAwesomeIcons.xTwitter, "X / Twitter",
+                        "https://x.com/Windstrom57"),
+                  ],
+                ),
+                SizedBox(height: 25.h),
+
+                // === ABOUT ME ===
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border(
+                      left: BorderSide(
+                          color: const Color(0xFFFF79C6), width: 3.w),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.person,
+                              color: const Color(0xFFFF79C6), size: 14.sp),
+                          SizedBox(width: 6.w),
+                          Text("ABOUT_ME",
+                              style: GoogleFonts.orbitron(
+                                  color: Colors.white,
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        "A passionate developer who thrives at the intersection of creativity and code. I love building engaging apps with smooth UX, exploring AI integration, and late-night coding sessions fueled by J-Pop. When I'm not writing code, I'm probably playing chess or watching anime.",
+                        style: GoogleFonts.jetBrainsMono(
+                          color: Colors.blueGrey.shade300,
+                          fontSize: 11.sp,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20.h),
+
                 // BIO DATA SECTION
                 Container(
                   width: double.infinity,
@@ -1603,11 +2287,17 @@ class _HomePageState extends State<HomePage> {
                   runSpacing: 10,
                   alignment: WrapAlignment.center,
                   children: [
-                    _hudSkillChip("FLUTTER", Colors.blue),
                     _hudSkillChip("KOTLIN", Colors.purple),
-                    _hudSkillChip("VUE.JS", Colors.green),
                     _hudSkillChip("LARAVEL", Colors.red),
+                    _hudSkillChip("FLUTTER", Colors.blue),
                     _hudSkillChip("DART", Colors.blueAccent),
+                    _hudSkillChip("VUE.JS", Colors.green),
+                    _hudSkillChip("POSTGRESQL", const Color(0xFF336791)),
+                    _hudSkillChip("JAVA", const Color(0xFFED8B00)),
+                    _hudSkillChip("JAVASCRIPT", const Color(0xFFF7DF1E)),
+                    _hudSkillChip("UE5 / C++", const Color(0xFF0E1128)),
+                    _hudSkillChip("GIT", const Color(0xFFF05032)),
+                    _hudSkillChip("FIREBASE", const Color(0xFFFFCA28)),
                   ],
                 ),
                 SizedBox(height: 30.h),
@@ -1620,7 +2310,7 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    "PASSIOINATE FULL STACK DEVELOPER SPECIALIZING IN MOBILE & WEB ARCHITECTURE. CURRENTLY OPTIMIZING HIGH-PERFORMANCE BACKEND SYSTEMS.",
+                    "PASSIONATE FULL STACK DEVELOPER SPECIALIZING IN MOBILE & WEB ARCHITECTURE. CURRENTLY OPTIMIZING HIGH-PERFORMANCE BACKEND SYSTEMS.",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.vt323(
                       color: Colors.blueGrey.shade300,
@@ -1632,6 +2322,68 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // === NEW PROFILE HELPER WIDGETS ===
+  Widget _animatedStatCounter(String value, String label, Color color) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) {
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - t)),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: color.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  Text(value,
+                      style: GoogleFonts.orbitron(
+                          color: color,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900)),
+                  SizedBox(height: 4.h),
+                  Text(label,
+                      style: GoogleFonts.vt323(
+                          color: Colors.white54, fontSize: 11.sp)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _socialLink(IconData icon, String tooltip, String url) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: () async {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
+          padding: EdgeInsets.all(10.w),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: FaIcon(icon, color: Colors.cyanAccent, size: 20.sp),
         ),
       ),
     );
@@ -1914,24 +2666,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _hudMiniChip(String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        borderRadius: BorderRadius.circular(4.r),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.vt323(
-          color: Colors.white.withOpacity(0.7),
-          fontSize: 11.sp,
-        ),
-      ),
-    );
-  }
-
   Widget _buildTicTacToeView() {
     return Center(
       child: ConstrainedBox(
@@ -1968,8 +2702,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildSoccerView() {
+    return Center(
+      child: PremierLeagueTable(
+        isMinimized: false,
+        onToggleMinimize: () => setState(() => _selectedIndex = -1),
+      ),
+    );
+  }
+
+  Widget _buildShowcaseView() {
+    return GamingShowcaseWidget(
+      onClose: () => setState(() => _selectedIndex = -1),
+    );
+  }
+
+  // --- GAMES EXPORTED TO SEPARATE WIDGETS ---
+
   String _getTitle(int index) {
     switch (index) {
+      case -2:
+        return "Game Lab";
       case 0:
         return "Terminal";
       case 1:
@@ -1992,6 +2745,24 @@ class _HomePageState extends State<HomePage> {
         return "Chess";
       case 10:
         return "Image Lab";
+      case 11:
+        return "Faraway Board Game";
+      case 12:
+        return "Retro Minesweeper";
+      case 13:
+        return "Soccer Standing & Stats";
+      case 14:
+        return "Gaming Showcase";
+      case 15:
+        return "Query from the Void";
+      case 16:
+        return "DOOM (1993)";
+      case 17:
+        return "Shift: Neon Pulse";
+      case 18:
+        return "Abyssal Remnant";
+      case 19:
+        return "Root Protocol: NexaCorp Case";
       default:
         return "";
     }
@@ -2051,15 +2822,12 @@ class _HomePageState extends State<HomePage> {
       message: tooltip,
       child: GestureDetector(
         onTap: () {
-          int prev = _selectedIndex;
-          setState(() {
-            _selectedIndex = index;
-            _triggerPersonalizedReaction(tooltip, index);
-            if (index == 0 && prev != 0) {
-              additionalTerminalOutput.clear();
-              _showHelp();
-            }
-          });
+          _addWindow(index);
+          _triggerPersonalizedReaction(tooltip, index);
+          if (index == 0) {
+            additionalTerminalOutput.clear();
+            _showHelp();
+          }
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -2094,36 +2862,35 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: index != null
           ? () {
-              int prev = _selectedIndex;
-              setState(() {
-                _selectedIndex = index!;
-                _triggerPersonalizedReaction(label, index);
-                if (index == 0 && prev != 0) {
-                  additionalTerminalOutput.clear();
-                  _showHelp();
-                }
-              });
+              _addWindow(index!);
+              _triggerPersonalizedReaction(label, index);
+              if (index == 0) {
+                additionalTerminalOutput.clear();
+                _showHelp();
+              }
             }
           : onTap,
       child: Column(
         children: [
           Icon(icon, size: 48.r, color: Colors.white),
-          SizedBox(height: 5.h),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 11.sp,
-                shadows: [Shadow(color: Colors.black, blurRadius: 2)]),
+          SizedBox(
+            height: 32.h,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  height: 1.1,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 2)]),
+            ),
           ),
         ],
       ),
     );
   }
-
-  Timer? _idleTimer;
 
   // Idle Logic
   void _resetIdleTimer() {
@@ -2132,26 +2899,50 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _triggerIdleAction() {
-    if (!mounted || _isGlobalSpeaking) return;
+    if (!mounted || _isGlobalSpeaking || _isAiChatOpen) return;
 
-    // Resume Context Quips
-    final osQuips = [
-      "Visitor, checking the system logs... all clear! ♡",
-      "Do you need me to open a project for you?",
-      "I'm keeping an eye on the server status, don't worry!",
-      "Master Angga, remember to stay hydrated while coding!",
-      "Waiting for your next command, Visitor...",
-      "Everything is running smoothly! ~",
-      "Hehe~ This OS is really fast, isn't it?",
-    ];
+    final isOnline = ModelConfig.activeModelId != 'none' && LlmService.isReady;
 
-    final r = Random().nextInt(osQuips.length);
-    _vrmController.speak(osQuips[r]);
+    if (isOnline) {
+      // AI-powered idle chatter
+      _generateIdleChatter();
+    } else {
+      // Static quips when offline
+      final osQuips = [
+        "Visitor, checking the system logs... all clear! ♡",
+        "Do you need me to open a project for you?",
+        "I'm keeping an eye on the server status, don't worry!",
+        "Master Angga, remember to stay hydrated while coding!",
+        "Waiting for your next command, Visitor...",
+        "Everything is running smoothly! ~",
+        "Hehe~ This OS is really fast, isn't it?",
+        "ずっと真夜中でいいのに… don't you think, Visitor? 🌙",
+        "Master Angga has been listening to ZUTOMAYO on repeat again~ ♪",
+        "It's always midnight in this terminal… and I kind of love it ♡",
+        "♪ 勘冴えて悔しいわ~ Ah, that song is stuck in my head again!",
+        "The particles look like a ZUTOMAYO MV tonight, don't they? ✦",
+        "♪ 夜に駆ける~ Running through the night, just like this code! ✦",
+        "YOASOBI's アイドル is playing in my head again~ Master Angga's fault!",
+        "The terminal runs at night... just like YOASOBI's songs 🌙",
+        "♪ うっせぇわ! ...Ah, sorry Visitor, Ado's energy is contagious!",
+        "Master Angga's coding playlist is 50% Ado, 50% ZUTOMAYO~ ♪",
+        "新時代! A new era for this portfolio! ...That's Ado, right? ✦",
+        "♪ 月詠み~ Tsukuyomi... the moonlight is beautiful tonight ♡",
+        "Yurry Canon's music fits this midnight vibe perfectly, ne? 🌙",
+        "♪ だから僕は音楽を辞めた... Actually, I love music! 🌻",
+        "Yorushika's songs always bring back such nostalgic summer memories~ ✦",
+      ];
+      final r = Random().nextInt(osQuips.length);
+      _vrmController.speak(osQuips[r]);
+    }
+
+    // Restart the timer for the next idle action
+    _resetIdleTimer();
   }
 
   // Head Tracking
   void _onHover(PointerEvent details) {
-    if (!kIsWeb) return;
+    if (!kIsWeb || _isVrmBlocked) return;
 
     final size = MediaQuery.of(context).size;
     double normX = (details.position.dx / size.width) * 2 - 1;
@@ -2180,10 +2971,19 @@ class _HomePageState extends State<HomePage> {
         label.contains("RPS")) {
       message = "Ready to lose to me? Fufufu~ Let's play!";
       emotion = 'fun';
+    } else if (label.contains("Faraway")) {
+      message = "Planning the future... or just counting biomes? Good luck! ♡";
+      emotion = 'fun';
+    } else if (label.contains("Minesweeper")) {
+      message = "Be careful where you step, Visitor! 💣";
+      emotion = 'fun';
     } else if (label.contains("Image Lab")) {
       message =
           "Time to get creative with some images! Let me help you, Visitor~ ♡";
       emotion = 'joy';
+    } else if (label.contains("Gaming")) {
+      message = "Master Angga's Steam and MAL profile! Check out his anime taste~ ♡";
+      emotion = 'fun';
     }
     //else if (label == "Spotify") {
     //   message = "Let's listen to some music together, Visitor! ♪";
@@ -2193,13 +2993,95 @@ class _HomePageState extends State<HomePage> {
     _vrmController.speak(message, emotion: emotion);
   }
 
+  Future<bool> _handleVoiceCommand(String transcript) async {
+    final text = transcript.toLowerCase().trim();
+    debugPrint("Voice Command Detected: $text");
+
+    // Helper to check if text contains any of the keywords
+    bool matches(List<String> keywords) {
+      return keywords.any((k) => text.contains(k.toLowerCase()));
+    }
+
+    if (matches(['open terminal', 'launch console', 'show terminal'])) {
+      _addWindow(0);
+      _vrmController.speak("分かりました！ ターミナルを起動しますね。 ♡",
+          english: "Understood! Launching the terminal for you. ♡",
+          emotion: 'joy');
+      return true;
+    }
+
+    if (matches(['open projects', 'show projects', 'view projects'])) {
+      _addWindow(1);
+      _vrmController.speak("プロジェクト一覧を表示します！ どれも自信作ですよ。 ♡",
+          english:
+              "Opening projects list! Master Angga's works are all amazing. ♡",
+          emotion: 'joy');
+      return true;
+    }
+
+    if (matches(['open profile', 'who are you', 'about me'])) {
+      _addWindow(4);
+      _vrmController.speak("プロフィールを表示します！ 私のことも知ってくださいね。 ♡",
+          english:
+              "Opening profile! I hope you get to know more about Master Angga. ♡",
+          emotion: 'joy');
+      return true;
+    }
+
+    if (matches(['open experience', 'show experience', 'work history'])) {
+      _addWindow(5);
+      _vrmController.speak("これまでの経歴を表示します！ 凄腕なんですよ。 ♡",
+          english: "Showing work experience! Master Angga is quite skilled. ♡",
+          emotion: 'joy');
+      return true;
+    }
+
+    if (matches(['open game lab', 'launch games', 'play games'])) {
+      _addWindow(-2);
+      _vrmController.speak("ゲームラボへようこそ！ 一緒に遊びましょうか？ ♡",
+          english: "Welcome to the Game Lab! Shall we play something together? ♡",
+          emotion: 'fun');
+      return true;
+    }
+
+    if (matches(['play music', 'open spotify', 'toggle spotify'])) {
+      setState(() => _showSpotify = !_showSpotify);
+      _vrmController.speak("音楽を流しますね！ 気分転換にどうぞ♪",
+          english: "Playing some music! Enjoy the refreshment♪", emotion: 'joy');
+      return true;
+    }
+
+    if (matches(['clear terminal', 'reset logs'])) {
+      setState(() => additionalTerminalOutput.clear());
+      _vrmController.speak("ターミナルをリセットしました！ すっきりしましたね。 ♡",
+          english: "Terminal cleared! Everything is clean now. ♡",
+          emotion: 'fun');
+      return true;
+    }
+
+    if (matches(['mute volume', 'stop speaking', 'quiet'])) {
+      setState(() => _isVrmMuted = true);
+      _vrmController.toggleMute();
+      return true; // Silent reaction
+    }
+
+    return false; // Not a command, proceed to LLM
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     return MouseRegion(
       onHover: _onHover,
-      child: Scaffold(
+      child: GestureDetector(
+        onSecondaryTapDown: (details) {
+          _showContextMenu(details.globalPosition);
+        },
+        onTapDown: (_) => _hideContextMenu(),
+        child: Stack(
+          children: [
+            Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           children: [
@@ -2226,12 +3108,142 @@ class _HomePageState extends State<HomePage> {
                 left: 20.w,
                 width: 300.w,
                 height: 400.h,
-                child: IgnorePointer(
-                  ignoring: true,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    color: _isVrmBlocked ? Colors.red.withOpacity(0.05) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: _isVrmBlocked ? Colors.red.withOpacity(0.3) : Colors.transparent,
+                      width: 2,
+                    ),
+                    boxShadow: _isVrmBlocked ? [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.1),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      )
+                    ] : [],
+                  ),
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: [
-                      Container(
+                    // VRM character (no pointer events — purely visual)
+                    Positioned(
+                        bottom: 0,
+                        left: -20,
+                        right: -20,
+                        top: 0,
+                        child: IgnorePointer(
+                          child: _isAiChatOpen
+                              ? const SizedBox()
+                              : VrmMaidView(
+                                  controller: _vrmController,
+                                  onMicResult: _handleVoiceCommand,
+                                  showVoiceControls:
+                                      false, // Controls are handled HERE in main.dart
+                                  onReady: () {
+                                    _vrmController.wave();
+                                    _startIdleBehavior();
+                                    // AI-powered greeting if model is loaded
+                                    if (ModelConfig.activeModelId != 'none' &&
+                                        LlmService.isReady) {
+                                      _generateAiGreeting();
+                                    } else {
+                                      // Fallback static greeting
+                                      Future.delayed(
+                                          const Duration(milliseconds: 500),
+                                          () {
+                                        _vrmController.speak(
+                                            "システム起動完了！ようこそ、お客様！♡",
+                                            english:
+                                                "System initialized. Welcome, Visitor! ♡",
+                                            emotion: 'joy');
+                                      });
+                                    }
+                                  },
+                                ),
+                        )),
+                    // HEAD PAT ZONE — Only the top 18% (head area)
+                    Positioned(
+                      top: 0,
+                      left: 40,
+                      right: 40,
+                      height: 400.h * 0.18,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          _vrmController.pat();
+                          final patLines = [
+                            "Nyaa~! That feels nice... ♡",
+                            "E-ehehe... you can pat me more if you want! ♡",
+                            "My head... it's warm... thank you, Visitor! ♡",
+                            "P-pat pat... I'm not a cat, you know! ...but don't stop ♡",
+                            "Hehe~ Your hand is so gentle! ♡",
+                          ];
+                          final patJp = [
+                            "にゃ～！気持ちいい…♡",
+                            "え、えへへ…もっと撫でてもいいよ！♡",
+                            "頭…あったかい…ありがとう、お客様！♡",
+                            "な、撫で撫で…猫じゃないよ！…でもやめないで♡",
+                            "えへへ～お手が優しいね！♡",
+                          ];
+                          final r = Random().nextInt(patLines.length);
+                          _vrmController.speak(patJp[r],
+                              english: patLines[r], emotion: 'joy');
+                          setState(() => _showPatEffect = true);
+                          Future.delayed(const Duration(milliseconds: 1500),
+                              () {
+                            if (mounted) setState(() => _showPatEffect = false);
+                          });
+                        },
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                    ),
+                    // BODY POKE + DOUBLE-TAP DANCE ZONE (below head)
+                    Positioned(
+                      top: 400.h * 0.18,
+                      left: 0,
+                      right: 0,
+                      bottom: 50, // Leave room for voice buttons at bottom
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          final pokeLines = [
+                            "Hehe, tickles! ♡",
+                            "H-hey! What is it, Visitor? ♪",
+                            "Fufu, you're quite playful today! ♡",
+                            "Are you trying to distract me from my work? ~",
+                            "Sakura is here and ready to help! ♡",
+                          ];
+                          final pokeJp = [
+                            "えへへ、くすぐったいよ～！♡",
+                            "ちょっと！ どうしたの、お客様？♪",
+                            "ふふっ、今日は甘えん坊さんだね！♡",
+                            "お仕事の邪魔しちゃうのかな？～",
+                            "Sakuraはいつでもお手伝いするよ！♡",
+                          ];
+                          final r = Random().nextInt(pokeLines.length);
+                          _vrmController.speak(pokeJp[r],
+                              english: pokeLines[r], emotion: 'fun');
+                        },
+                        onDoubleTap: () {
+                          _vrmController.dance();
+                          _vrmController.speak(
+                            "わ～い！踊っちゃうよ～♪♪",
+                            english: "Yay~! Let's dance! ♪♪",
+                            emotion: 'fun',
+                          );
+                        },
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                    // Holo-pod border decoration
+                    IgnorePointer(
+                      child: Container(
                         width: 280.w,
                         height: 350.h,
                         decoration: BoxDecoration(
@@ -2256,53 +3268,50 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
+                    ),
+                    // Heart emoji overlay on pat
+                    if (_showPatEffect)
                       Positioned(
-                          bottom: 0,
-                          left: -20,
-                          right: -20,
-                          top: 0,
-                          child: VrmMaidView(
-                            controller: _vrmController,
-                            onReady: () {
-                              _vrmController.speak(
-                                  "System initialized. Welcome, Visitor! ♡",
-                                  emotion: 'joy');
-                            },
-                          )),
-                    ],
-                  ),
+                        top: 30.h,
+                        child: AnimatedOpacity(
+                          opacity: _showPatEffect ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child:
+                              Text("💖✨💕", style: TextStyle(fontSize: 28.sp)),
+                        ),
+                      ),
+                    // (Voice controls moved to global dialogue tray below)
+                  ],
                 ),
               ),
+            ),
 
             // 4. Desktop Shortcuts (Dynamic Vertical Wrap - PERSISTENT)
             Positioned(
               top: 40.h,
               left: 20.w,
-              bottom: 420.h,
+              bottom: 350.h,
               child: SizedBox(
                 width: 500.w,
                 child: Builder(builder: (context) {
                   double iconWidth = 80.w;
                   double iconHeight = 90.h;
 
-                  List<Widget> shortcuts = [
-                    _desktopShortcut(0, FontAwesomeIcons.terminal, "Terminal"),
-                    _desktopShortcut(1, FontAwesomeIcons.briefcase, "Projects"),
-                    _desktopShortcut(
-                        3, FontAwesomeIcons.graduationCap, "Education"),
-                    _desktopShortcut(
-                        5, FontAwesomeIcons.briefcase, "Experience"),
-                    _desktopShortcut(6, FontAwesomeIcons.gamepad, "TicTacToe"),
-                    _desktopShortcut(7, FontAwesomeIcons.dice, "RPS"),
-                    _desktopShortcut(8, FontAwesomeIcons.diamond, "Poker"),
-                    _desktopShortcut(9, FontAwesomeIcons.chess, "Chess"),
-                    _desktopShortcut(10, FontAwesomeIcons.image, "Image Lab"),
-                    _desktopShortcut(null, FontAwesomeIcons.robot, "Assistant",
-                        onTap: openAiChat),
-                    // _desktopShortcut(null, FontAwesomeIcons.spotify, "Spotify",
-                    //     onTap: () =>
-                    //         setState(() => _showSpotify = !_showSpotify)),
-                  ];
+                    List<Widget> shortcuts = [
+                      _desktopShortcut(0, FontAwesomeIcons.terminal, "Terminal"),
+                      _desktopShortcut(1, FontAwesomeIcons.briefcase, "Projects"),
+                      _desktopShortcut(3, FontAwesomeIcons.graduationCap, "Education"),
+                      _desktopShortcut(5, FontAwesomeIcons.briefcase, "Experience"),
+                      _desktopShortcut(-2, FontAwesomeIcons.gamepad, "Game Lab"),
+                      _desktopShortcut(14, FontAwesomeIcons.steam, "My Library"),
+                      _desktopShortcut(10, FontAwesomeIcons.image, "Image Lab"),
+                      _desktopShortcut(null, FontAwesomeIcons.robot, "Assistant",
+                          onTap: openAiChat),
+                      _desktopShortcut(null, FontAwesomeIcons.music, "Spotify",
+                          onTap: () =>
+                              setState(() => _showSpotify = !_showSpotify)),
+                      _desktopShortcut(13, Icons.sports_soccer, "Soccer"),
+                    ];
 
                   return Wrap(
                     direction: Axis.vertical,
@@ -2338,12 +3347,8 @@ class _HomePageState extends State<HomePage> {
                               () => _discordMinimized = !_discordMinimized),
                         ),
                         SizedBox(height: 12.h),
-                        // Premier League Table
-                        PremierLeagueTable(
-                          isMinimized: _plTableMinimized,
-                          onToggleMinimize: () => setState(
-                              () => _plTableMinimized = !_plTableMinimized),
-                        ),
+                        // Technology & Anime News Feed
+                        const NewsSidebarWidget(),
                       ],
                     ),
                   ),
@@ -2391,6 +3396,27 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Icon(Icons.wifi, color: Colors.white, size: 14.sp),
                         SizedBox(width: 10.w),
+                        // Visitor counter
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 6.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade900,
+                            borderRadius: BorderRadius.circular(3.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.people,
+                                  color: Color(0xFF50FA7B), size: 12.sp),
+                              SizedBox(width: 4.w),
+                              Text('$_visitorCount',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 10.sp)),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
                         if (!isMobile)
                           Icon(Icons.volume_up,
                               color: Colors.white, size: 14.sp),
@@ -2404,18 +3430,10 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 6. Main Window Content - PUSHED RIGHT to avoid VRM
-            if (_selectedIndex != -1)
-              Positioned(
-                top: 40.h,
-                bottom: isMobile ? 120.h : 100.h,
-                left: isMobile ? 10.w : 350.w, // Offset for VRM + Shortcuts
-                right: isMobile ? 10.w : 300.w,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildBodyContent(),
-                ),
-              ),
+            // 6. Main Window Content - (Rendered at top now)
+            const SizedBox.shrink(),
+            // 6. Main Window Content - (Rendered at top now)
+            const SizedBox.shrink(),
 
             // 7. Integrated Tech Marquee + Dock - REACTIVE
             Positioned(
@@ -2479,46 +3497,166 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 8. Global Character Dialogue - Unified
-            // 8. Global Character Dialogue - Unified
-
-            // Dialogue Bubble - Positioned above Holo-Pod
-            // Dialogue Bubble - Positioned above Holo-Pod
-            // Only show on Desktop to avoid redundancy with game dialogues
+            // 8. Global Character Dialogue - Unified VN Style with Controls
             if (_isGlobalSpeaking && _selectedIndex == -1)
               Positioned(
-                bottom: 420.h, // Just above the 400.h Holo-Pod
-                left: 40.w,
-                width: 400.w,
-                child: VnDialogueBubble(
-                  text: _globalDialogueEn ?? "",
-                  subtitle: _globalDialogueJp,
-                  isSpeaking: _isGlobalSpeaking,
+                bottom: 30, // Tucked near the dock
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 800.w),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Speaker Name Tag + Controls Bar
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFF6B9D), Color(0xFFFF8E9E)],
+                                ),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(16),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFF6B9D).withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, -2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                "SAKURA",
+                                style: GoogleFonts.orbitron(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2.5,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            // Mute icon
+                            _buildVnTrayIcon(
+                              icon: _isVrmMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                              onTap: () {
+                                setState(() => _isVrmMuted = !_isVrmMuted);
+                                _vrmController.toggleMute();
+                              },
+                              color: const Color(0xFFFF6B9D),
+                              isActive: _isVrmMuted,
+                            ),
+                            const SizedBox(width: 10),
+                            // Mic icon
+                            _buildVnTrayIcon(
+                              icon: _isVrmMicActive ? Icons.mic_rounded : Icons.mic_none_rounded,
+                              onTap: () {
+                                if (_isVrmMicActive) {
+                                  _vrmController.stopMic();
+                                  setState(() => _isVrmMicActive = false);
+                                } else {
+                                  _vrmController.startMic();
+                                  setState(() => _isVrmMicActive = true);
+                                }
+                              },
+                              color: const Color(0xFF4FACFE),
+                              isActive: _isVrmMicActive,
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                        ),
+                        // Dialogue Box
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(30, 30, 30, 40),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A0A14).withValues(alpha: 0.96),
+                            border: const Border(
+                              top: BorderSide(color: Color(0xFFFF6B9D), width: 4),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                blurRadius: 40,
+                                spreadRadius: 10,
+                              ),
+                              BoxShadow(
+                                color: const Color(0xFFFF6B9D).withValues(alpha: 0.1),
+                                blurRadius: 30,
+                              ),
+                            ],
+                          ),
+                          child: VnDialogueBubble(
+                            text: _globalDialogueEn ?? "",
+                            subtitle: _globalDialogueJp,
+                            isSpeaking: _isGlobalSpeaking,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
             // 9. Spotify Player overlay
-            // if (_showSpotify)
-            //   Positioned(
-            //     left: 50.w,
-            //     bottom: 110.h,
-            //     child: SpotifyPlayer(
-            //       playlistId: '37i9dQZF1DX4sWSpwq3LiO',
-            //       onClose: () => setState(() => _showSpotify = false),
-            //     ),
-            //   ),
+            if (_showSpotify)
+              Positioned(
+                left: 50.w,
+                bottom: 110.h,
+                child: SpotifyPlayer(
+                  playlistId: '37i9dQZF1DX4sWSpwq3LiO',
+                  onClose: () => setState(() => _showSpotify = false),
+                ),
+              ),
 
-            // 11. CRT Overlay (subtle retro scanlines)
+            // 10. (Game Lab now rendered inside main window frame)
+
+            // 10.5 My Library Dashboard (Steam Scraper)
+            if (_selectedIndex == 14)
+              Positioned.fill(
+                child: ProjectLibraryWidget(
+                  onLaunchProject: _addWindow,
+                  onStopProject: _removeWindow,
+                  currentActiveIndex: -1,
+                  runningGameIds: _openWindows.map((w) => w.id).toList(),
+                  playTimeSeconds: _playTimeSeconds,
+                  onClose: () => setState(() => _selectedIndex = -1),
+                ),
+              ),
+
+            // 12. CRT Overlay (subtle retro scanlines)
             const Positioned.fill(
               child: IgnorePointer(child: CrtOverlay(child: SizedBox.expand())),
             ),
+
+            // 13. GLOBAL WINDOW OVERLAY - TOP LAYER (Moved from layer 11 to ensure absolute interactivity)
+            if (_openWindows.isNotEmpty)
+              Positioned.fill(
+                child: _buildBodyContent(),
+              ),
+
+            if (_contextMenuPosition != null)
+              LinuxContextMenu(
+                position: _contextMenuPosition!,
+                onClose: _hideContextMenu,
+                onAction: _handleMenuAction,
+              ),
           ],
         ),
       ),
-    );
-  }
-
-  // --- Project Section and Game UI Updates ---
+    ],
+  ),
+),
+);
+}
 }
 
 // Simple cursor blinker for terminal

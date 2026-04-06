@@ -68,6 +68,10 @@ class WebUtils {
   static dynamic getProperty(dynamic obj, String property) =>
       (obj as JSObject).getProperty(property.toJS);
 
+  static void setProperty(dynamic obj, String property, dynamic value) {
+    (obj as JSObject).setProperty(property.toJS, (value as Object).jsify());
+  }
+
   static dynamic getPropertyByPath(String path) {
     try {
       dynamic obj = jsContext;
@@ -117,13 +121,21 @@ class WebUtils {
       String? border,
       String? width,
       String? height,
-      String? allow}) {
+      String? allow,
+      String? sandbox,
+      String? pointerEvents}) {
     final iframe =
         web.document.createElement('iframe') as web.HTMLIFrameElement;
     iframe.src = src ?? '';
     iframe.style.border = border ?? 'none';
     iframe.style.width = width ?? '100%';
     iframe.style.height = height ?? '100%';
+    if (pointerEvents != null) {
+      iframe.style.setProperty('pointer-events', pointerEvents);
+    }
+    if (sandbox != null) {
+      iframe.setAttribute('sandbox', sandbox);
+    }
     iframe.allow = allow ?? '';
     return iframe;
   }

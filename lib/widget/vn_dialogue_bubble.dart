@@ -26,6 +26,7 @@ class _VnDialogueBubbleState extends State<VnDialogueBubble> {
   String _displayedText = "";
   Timer? _typewriterTimer;
   int _charIndex = 0;
+  bool _isComplete = false;
 
   @override
   void initState() {
@@ -52,12 +53,13 @@ class _VnDialogueBubbleState extends State<VnDialogueBubble> {
     setState(() {
       _displayedText = "";
       _charIndex = 0;
+      _isComplete = false;
     });
 
     if (widget.text.isEmpty) return;
 
     _typewriterTimer =
-        Timer.periodic(const Duration(milliseconds: 30), (timer) {
+        Timer.periodic(const Duration(milliseconds: 25), (timer) {
       if (_charIndex < widget.text.length) {
         setState(() {
           _displayedText += widget.text[_charIndex];
@@ -65,111 +67,92 @@ class _VnDialogueBubbleState extends State<VnDialogueBubble> {
         });
       } else {
         timer.cancel();
+        setState(() => _isComplete = true);
         widget.onComplete?.call();
       }
     });
+  }
+
+  void _skipToEnd() {
+    if (_isComplete) return;
+    _typewriterTimer?.cancel();
+    setState(() {
+      _displayedText = widget.text;
+      _charIndex = widget.text.length;
+      _isComplete = true;
+    });
+    widget.onComplete?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.text.isEmpty && !widget.isSpeaking) return const SizedBox();
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Name Tag
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E).withOpacity(0.8),
-              border: Border.all(
-                  color: Colors.pinkAccent.withOpacity(0.8), width: 1.5),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+    // Tap anywhere on the dialogue to skip typewriter
+    return GestureDetector(
+      onTap: _skipToEnd,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedOpacity(
+        opacity: widget.text.isNotEmpty ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 500),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Primary Text (English) with typewriter
+            Text(
+              _displayedText,
+              style: GoogleFonts.ubuntu(
+                color: Colors.white,
+                fontSize: 18,
+                height: 1.4,
+                letterSpacing: 0.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.pinkAccent.withOpacity(0.3),
-                  blurRadius: 4,
+            ),
+            if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              // Subtitle Text (Japanese)
+              AnimatedOpacity(
+                opacity: _isComplete ? 1.0 : 0.5,
+                duration: const Duration(milliseconds: 400),
+                child: Text(
+                  widget.subtitle!,
+                  style: GoogleFonts.kosugiMaru(
+                    color: Colors.cyanAccent.withValues(alpha: 0.7),
+                    fontSize: 14,
+                    height: 1.5,
+                    letterSpacing: 0.8,
+                  ),
                 ),
-              ],
-            ),
-            child: Text(
-              widget.name.toUpperCase(),
-              style: GoogleFonts.pressStart2p(
-                color: Colors.pinkAccent,
-                fontSize: 9,
-                letterSpacing: 1.5,
               ),
-            ),
-          ),
-          // Dialogue Box
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(12),
-              bottomLeft: Radius.circular(12),
-              bottomRight: Radius.circular(12),
-            ),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F0F18).withOpacity(0.7),
-                border: Border.all(
-                    color: Colors.cyanAccent.withOpacity(0.4), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyanAccent.withOpacity(0.1),
-                    blurRadius: 10,
+            ],
+            // Blinking "click to continue" indicator
+            if (_isComplete)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _BlinkingIndicator(),
+                ),
+              ),
+            // "Click to skip" hint while typing
+            if (!_isComplete && _displayedText.isNotEmpty)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    '▶ skip',
+                    style: GoogleFonts.jetBrainsMono(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Primary Text (English)
-                  Text(
-                    _displayedText,
-                    style: GoogleFonts.vt323(
-                      color: Colors.white,
-                      fontSize: 18,
-                      height: 1.1,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.subtitle != null &&
-                      widget.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    // Subtitle Text (Japanese)
-                    Text(
-                      widget.subtitle!,
-                      style: GoogleFonts.notoSansJp(
-                        color: Colors.cyanAccent.withOpacity(0.6),
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  // Cursor / blinking indicator
-                  if (_charIndex == widget.text.length)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: _BlinkingIndicator(),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -203,8 +186,18 @@ class _BlinkingIndicatorState extends State<_BlinkingIndicator>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _controller,
-      child:
-          const Icon(Icons.arrow_drop_down, color: Colors.pinkAccent, size: 24),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '▼',
+            style: GoogleFonts.vt323(
+              color: const Color(0xFFFF6B9D),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

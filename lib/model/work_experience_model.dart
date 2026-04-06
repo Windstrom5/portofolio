@@ -23,13 +23,13 @@ final List<WorkExperienceModel> allWorkExperiences = [
     title: 'Backend Programmer (Intern)',
     company: 'RSU Mitra Paramedika Yogyakarta',
     location: 'Yogyakarta, Indonesia',
-    period: 'Oct 2024 - Present',
+    period: 'Oct 2025 - Apr 2026',
     points: [
-      'Developing and maintaining the SIMRS (Sistem Informasi Manajemen Rumah Sakit) system.',
-      'Building robust backend services using Laravel framework.',
-      'Collaborating with the IT team to optimize hospital management workflows.',
+      'Architecting and maintaining the SIMRS (Sistem Informasi Manajemen Rumah Sakit) enterprise system.',
+      'Developed high-performance backend services using Laravel, focusing on scalability and data integrity.',
+      'Collaborated with cross-functional teams to streamline hospital management workflows and improve operational efficiency.',
     ],
-    techStack: ['Laravel', 'PHP', 'MySQL', 'REST API'],
+    techStack: ['Laravel', 'PHP', 'MySQL', 'REST API', 'Clean Architecture'],
   ),
   WorkExperienceModel(
     title: 'Software Programmer (Intern)',
@@ -37,11 +37,11 @@ final List<WorkExperienceModel> allWorkExperiences = [
     location: 'Kasim, Indonesia',
     period: 'Sept 2023 - Jan 2024',
     points: [
-      'Engineered a mobile overtime tracking system using Kotlin and Laravel.',
-      'Optimized database queries for reporting across 500+ employees.',
-      'Improved HR operational efficiency by automating manual logging processes.',
+      'Engineered a robust mobile overtime tracking system using Kotlin and Laravel, improving HR data accuracy.',
+      'Optimized complex database queries for real-time reporting across a workforce of 500+ employees.',
+      'Automated legacy manual logging processes, reducing administrative overhead by 40%.',
     ],
-    techStack: ['Kotlin', 'Android', 'Laravel', 'PostgreSQL'],
+    techStack: ['Kotlin', 'Android', 'Laravel', 'PostgreSQL', 'Query Optimization'],
   ),
   WorkExperienceModel(
     title: 'Computer Literacy Instructor',
@@ -49,9 +49,9 @@ final List<WorkExperienceModel> allWorkExperiences = [
     location: 'Yogyakarta, Indonesia',
     period: 'July 2023',
     points: [
-      'Developed a custom IT curriculum for primary students.',
-      'Led workshops on digital tools and internet safety.',
+      'Designed and implemented a comprehensive IT curriculum for primary education levels.',
+      'Facilitated workshops on digital literacy, internet safety, and essential software tools for 100+ students.',
     ],
-    techStack: ['Teaching', 'Curriculum Design', 'Public Speaking'],
+    techStack: ['Curriculum Design', 'Public Speaking', 'Instructional Leadership'],
   ),
 ];

@@ -69,7 +69,7 @@ class _TechStackMarqueeState extends State<TechStackMarquee>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(entry.value,
-                    color: Colors.cyanAccent.withOpacity(0.3), size: 14.sp),
+                    color: Colors.cyanAccent.withValues(alpha: 0.3), size: 14.sp),
                 SizedBox(width: 8.w),
                 Text(
                   entry.key.toUpperCase(),

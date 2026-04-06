@@ -11,6 +11,29 @@ let initialized = false;
 let progressFrozen = false;
 
 // =======================
+// 🔍 CACHE CHECK
+// =======================
+globalThis.checkModelCached = async (modelId) => {
+  try {
+    const cacheNames = await caches.keys();
+    // WebLLM caches use names containing the model ID
+    for (const name of cacheNames) {
+      if (name.includes(modelId) || name.includes('webllm')) {
+        const cache = await caches.open(name);
+        const keys = await cache.keys();
+        // Check if any cached entry URL contains the model ID
+        const hasModel = keys.some(req => req.url.includes(modelId));
+        if (hasModel) return true;
+      }
+    }
+    return false;
+  } catch (e) {
+    console.warn('Cache check failed:', e);
+    return false;
+  }
+};
+
+// =======================
 // 💬 MEMORY
 // =======================
 let systemPrompt = null;
@@ -120,13 +143,16 @@ globalThis.stopSpeaking = () => {
 // =======================
 // 🚀 INIT LLM
 // =======================
-globalThis.initLLM = async (resumeContext) => {
+globalThis.initLLM = async (resumeContext, modelId) => {
   if (initialized || initializing) return;
 
   initializing = true;
 
+  const selectedModel = modelId || "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+  console.log("🚀 Loading model:", selectedModel);
+
   engine = await CreateMLCEngine(
-    "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+    selectedModel,
     {
       cache: true,
       initProgressCallback: (report) => {
@@ -137,7 +163,7 @@ globalThis.initLLM = async (resumeContext) => {
 
         if (percent >= 100) {
           progressFrozen = true;
-          console.log("✅ WebLLM READY");
+          console.log("✅ WebLLM READY —", selectedModel);
         }
       },
     }

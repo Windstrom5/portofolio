@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 class HUDPainter extends CustomPainter {
   final Color accentColor;
@@ -8,6 +7,7 @@ class HUDPainter extends CustomPainter {
   final bool showGrid;
   final bool showScanlines;
   final double opacity;
+  final double pulse; // Added pulse parameter
 
   HUDPainter({
     this.accentColor = Colors.cyanAccent,
@@ -16,6 +16,7 @@ class HUDPainter extends CustomPainter {
     this.showGrid = true,
     this.showScanlines = true,
     this.opacity = 0.8,
+    this.pulse = 1.0, // Default pulse
   });
 
   @override
@@ -69,15 +70,12 @@ class HUDPainter extends CustomPainter {
       ..strokeWidth = 1.5;
     canvas.drawPath(path, borderPaint);
 
-    // HUD Brackets with Pulse
-    final pulse =
-        (math.sin(DateTime.now().millisecondsSinceEpoch / 500) * 0.5) + 0.5;
+    // HUD Brackets with Pulse (Using passed pulse value)
     final bracketPaint = Paint()
       ..color = accentColor.withOpacity(0.3 + (pulse * 0.7))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 
-    // Optional: Add a subtle glow/shadow to the pulse
     final glowPaint = Paint()
       ..color = accentColor.withOpacity(0.2 * pulse)
       ..style = PaintingStyle.stroke
@@ -120,7 +118,11 @@ class HUDPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant HUDPainter oldDelegate) {
+    return oldDelegate.pulse != pulse ||
+        oldDelegate.accentColor != accentColor ||
+        oldDelegate.opacity != opacity;
+  }
 }
 
 class HUDContainer extends StatelessWidget {
@@ -134,6 +136,7 @@ class HUDContainer extends StatelessWidget {
   final bool showGrid;
   final bool showScanlines;
   final double opacity;
+  final double pulse; // Pass pulse from parent
 
   const HUDContainer({
     super.key,
@@ -147,6 +150,7 @@ class HUDContainer extends StatelessWidget {
     this.showGrid = true,
     this.showScanlines = true,
     this.opacity = 0.8,
+    this.pulse = 1.0,
   });
 
   @override
@@ -154,20 +158,25 @@ class HUDContainer extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      child: CustomPaint(
-        painter: HUDPainter(
-          accentColor: accentColor,
-          cornerRadius: cornerRadius, // Reverted the incorrect string literal
-          bracketSize: bracketSize,
-          showGrid: showGrid,
-          showScanlines: showScanlines,
-          opacity: opacity,
-        ),
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(20),
-          child: child,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: HUDPainter(
+            accentColor: accentColor,
+            cornerRadius: cornerRadius,
+            bracketSize: bracketSize,
+            showGrid: showGrid,
+            showScanlines: showScanlines,
+            opacity: opacity,
+            pulse: pulse,
+          ),
+          child: Container(
+            padding: padding ?? const EdgeInsets.all(20),
+            child: child,
+          ),
         ),
       ),
     );
   }
 }
+
+

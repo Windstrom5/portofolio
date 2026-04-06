@@ -49,9 +49,9 @@ final List<ProjectModel> allProjects = [
   ProjectModel(
     id: 'portofolio',
     title: 'Portofolio OS',
-    shortDescription: 'Interactive portfolio simulating a hacker/retro OS.',
+    shortDescription: 'Immersive terminal-based portfolio simulating a high-tech OS environment.',
     description:
-        'A unique, interactive portfolio website capable of running mini-games, simulating an OS, and showcasing projects with flair. Built with Flutter Web and Web Assembly. Features a built-in resume exporter to PDF using custom templates.',
+        'A sophisticated, interactive portfolio system featuring a custom terminal emulator, window management, and real-time system monitoring. Built with Flutter Web and WebAssembly, it includes an integrated PDF engine for dynamic resume generation with customizable themes.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/portofolio',
@@ -59,7 +59,7 @@ final List<ProjectModel> allProjects = [
     version: '3.5.0',
     rating: 5.0,
     downloadSize: '18 MB',
-    techStack: ['Flutter Web', 'Animations', 'PDF Export'],
+    techStack: ['Flutter Web', 'WebAssembly', 'PDF Engine', 'Custom Animations'],
     completionDate: '2025',
     repoUrl: 'https://github.com/Windstrom5/portofolio',
     isInstalled: true,
@@ -70,9 +70,9 @@ final List<ProjectModel> allProjects = [
   ProjectModel(
     id: 'Diet_Gamification',
     title: 'Diet Gamifikasi',
-    shortDescription: 'Gamified fitness & diet tracker journey.',
+    shortDescription: 'Gamified digital health & nutrition tracking ecosystem.',
     description:
-        'Transform your healthy lifestyle into a fun RPG with streaks and challenges. Authentication and API built with Laravel for secure data flows, and specialized PostgreSQL schema for analytics-friendly queries.',
+        'Revolutionizing health tracking by integrating RPG-style progression and behavioral gamification. Features a high-integrity backend powered by Laravel and a specialized PostgreSQL schema optimized for health analytics and trend reporting.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/2738/2738650.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/Diet_Gamification',
@@ -80,7 +80,7 @@ final List<ProjectModel> allProjects = [
     version: '1.1.0',
     rating: 4.6,
     downloadSize: '20 MB',
-    techStack: ['Kotlin', 'Laravel', 'PostgreSQL'],
+    techStack: ['Kotlin', 'Laravel', 'PostgreSQL', 'Data Analytics'],
     completionDate: '2025',
     repoUrl: 'https://github.com/Windstrom5/Diet_Gamification',
     primaryLanguage: 'Kotlin',
@@ -89,10 +89,10 @@ final List<ProjectModel> allProjects = [
   ),
   ProjectModel(
     id: 'WorkHubs',
-    title: 'Workhubs',
-    shortDescription: 'Employee activity tracking and daily attendance via QR.',
+    title: 'WorkHubs',
+    shortDescription: 'Enterprise-grade employee productivity and attendance management.',
     description:
-        'Enterprise-level employee activity tracking and daily attendance system via QR. Includes overtime and official duty logging with approvals. REST backend built with Laravel and PostgreSQL.',
+        'A comprehensive workforce management suite featuring secure QR-based attendance, overtime orchestration, and official duty tracking. Engineered with a focus on administrative transparency and operational efficiency.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/3062/3062634.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop',
@@ -100,7 +100,7 @@ final List<ProjectModel> allProjects = [
     version: '1.2.0',
     rating: 4.5,
     downloadSize: '12 MB',
-    techStack: ['Android', 'QR Attendance', 'Kotlin', 'Laravel'],
+    techStack: ['Kotlin', 'Laravel', 'PostgreSQL', 'QR Security'],
     completionDate: '2024',
     repoUrl: 'https://github.com/Windstrom5/WorkHubs',
     primaryLanguage: 'Kotlin',
@@ -109,10 +109,10 @@ final List<ProjectModel> allProjects = [
   ),
   ProjectModel(
     id: 'Go-Fit-android',
-    title: 'Go-Fit Android',
-    shortDescription: 'Gym operations suite for members and instructors.',
+    title: 'Go-Fit',
+    shortDescription: 'Full-spectrum gym management and member engagement platform.',
     description:
-        'Comprehensive gym operations suite featuring schedule/class management with attendance tracking. Includes a Web admin built with Vue.js for multi-instructor setups.',
+        'An all-in-one operations suite for fitness centers, facilitating class scheduling, instructor management, and member progress tracking. Includes a high-performance Web Admin built with Vue.js for enterprise-level oversight.',
     iconUrl:
         'https://raw.githubusercontent.com/Windstrom5/Go-Fit-android/master/app/src/main/res/drawable/logo.png',
     bannerUrl:
@@ -121,7 +121,7 @@ final List<ProjectModel> allProjects = [
     version: '2.1.0',
     rating: 4.8,
     downloadSize: '15 MB',
-    techStack: ['Kotlin', 'Laravel', 'Vue.js'],
+    techStack: ['Kotlin', 'Laravel', 'Vue.js', 'Enterprise Architecture'],
     completionDate: '2023 - 2024',
     repoUrl: 'https://github.com/Windstrom5/Go-Fit-android',
     primaryLanguage: 'Kotlin',
@@ -130,11 +130,10 @@ final List<ProjectModel> allProjects = [
   ),
   ProjectModel(
     id: 'karaoke-app',
-    title: 'Karaoke App',
-    shortDescription:
-        'AI-powered vocal separation and lyrics generation. (WIP)',
+    title: 'Karaoke AI',
+    shortDescription: 'Neural-assisted vocal separation and real-time lyric synthesis.',
     description:
-        'Work In Progress: Real-time vocal/instrument separation via Python backend (Demucs, MoviePy, Torch). Features AI-powered automatic lyrics generation with Whisper, transliteration, and translation tools.',
+        'Cutting-edge research into AI-powered audio processing. Implements high-fidelity vocal/instrument separation via Python-based ML models (Demucs/Torch) and automated Whisper-driven lyric generation and translation.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/3059/3059518.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/portofolio',
@@ -143,15 +142,13 @@ final List<ProjectModel> allProjects = [
     rating: 4.7,
     downloadSize: '50 MB',
     techStack: [
-      'Ktor',
       'Compose Multiplatform',
-      'AI',
-      'Python',
-      'Demucs',
-      'Whisper'
+      'Python AI',
+      'Machine Learning',
+      'Audio Processing'
     ],
-    completionDate: 'WIP',
-    repoUrl: null, // No public GitHub page yet
+    completionDate: 'In Development',
+    repoUrl: null,
     primaryLanguage: 'Kotlin',
     platform: 'Multiplatform',
     status: ProjectStatus.development,
@@ -160,9 +157,9 @@ final List<ProjectModel> allProjects = [
   ProjectModel(
     id: 'Fatebound-Quest',
     title: 'Fatebound Quest',
-    shortDescription: 'UE5 Roguelike with RNG Training. (WIP)',
+    shortDescription: 'Advanced UE5 Roguelike featuring data-driven RPG mechanics.',
     description:
-        'Work In Progress: Tile and dice-based gameplay inspired by D&D mechanics. Features RNG-driven training progression and built in Unreal Engine 5 with data-driven content.',
+        'A next-generation Roguelike experience developed in Unreal Engine 5. Focuses on procedural content generation, complex tile-based systems, and a high-fidelity dice-rolling engine inspired by classic tabletop mechanics.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/188/188987.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/DungeonQuest',
@@ -170,8 +167,8 @@ final List<ProjectModel> allProjects = [
     version: '0.5.0-WIP',
     rating: 5.0,
     downloadSize: '2.1 GB',
-    techStack: ['UE5', 'Roguelike', 'RNG Training'],
-    completionDate: 'WIP',
+    techStack: ['Unreal Engine 5', 'C++', 'Procedural Generation', 'Blueprints'],
+    completionDate: 'In Development',
     repoUrl: 'https://github.com/Windstrom5/Unreal-Engine-Pokedex',
     primaryLanguage: 'C++',
     platform: 'PC',
@@ -181,9 +178,9 @@ final List<ProjectModel> allProjects = [
   ProjectModel(
     id: 'nihonGO',
     title: 'nihonGO',
-    shortDescription: 'Information about Japanese tourism destinations.',
+    shortDescription: 'Premium Japanese tourism and destination intelligence platform.',
     description:
-        'Android application providing comprehensive information about Japanese tourism destinations. Focused on content presentation and ease of navigation.',
+        'A modern Android application providing meticulously curated information on Japanese tourism. Prioritizes UX-focused navigation and rich content presentation for seamless travel discovery.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/197/197604.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/nihonGO',
@@ -191,7 +188,7 @@ final List<ProjectModel> allProjects = [
     version: '2.0.0',
     rating: 4.9,
     downloadSize: '30 MB',
-    techStack: ['Android', 'Kotlin'],
+    techStack: ['Android', 'Kotlin', 'UX/UI Design'],
     completionDate: '2023',
     repoUrl: 'https://github.com/Windstrom5/nihonGO',
     primaryLanguage: 'Kotlin',
@@ -201,9 +198,9 @@ final List<ProjectModel> allProjects = [
   ProjectModel(
     id: 'steam-box',
     title: 'Steam Box',
-    shortDescription: 'Dynamic Steam profile README metrics.',
+    shortDescription: 'Automated dynamic metric orchestration for GitHub ecosystems.',
     description:
-        'Update your GitHub profile README or pinned gist with your real-time Steam playtime leaderboard metrics.',
+        'A serverless automation tool that synchronizes real-time Steam gaming metrics with GitHub profile metadata, utilizing high-availability Node.js environments and GitHub Actions.',
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/888/888868.png',
     bannerUrl:
         'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/steam-box',
@@ -211,7 +208,7 @@ final List<ProjectModel> allProjects = [
     version: '1.0.0',
     rating: 4.8,
     downloadSize: 'N/A',
-    techStack: ['GitHub Actions', 'Node.js'],
+    techStack: ['GitHub Actions', 'Node.js', 'API Integration'],
     completionDate: '2023',
     repoUrl: 'https://github.com/Windstrom5/steam-box',
     primaryLanguage: 'JavaScript',

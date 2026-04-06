@@ -1,0 +1,479 @@
+
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <link rel="icon" type="image/png" href="/assets/favicon.ico">
+
+    
+ 
+
+<title>English | DOS games in browser</title>
+
+<meta property="og:site_name" content="DOS Zone">
+<meta property="og:locale" content="en">
+<meta property="og:type" content="website">
+<meta property="og:title" content="English | DOS games in browser">
+<meta property="og:description" content="">
+
+<meta name="twitter:title" content="English | DOS games in browser">
+<meta name="twitter:description" content="">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@caiiiycuk">
+<meta name="twitter:dnt" content="on">
+
+<meta name="description" content="">
+
+
+  
+
+
+<meta property="og:image" content="https://dos.zone/images/containers/assets/seo_image.jpg/305f8ab86e22fdd50cb3762298d95219.webp">
+<meta property="twitter:image" content="https://dos.zone/images/containers/assets/seo_image.jpg/305f8ab86e22fdd50cb3762298d95219.webp">
+
+<link rel="canonical" href="/"> 
+
+
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": ["VideoGame", "WebApplication"],
+      "name": "",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Browser"
+    }
+    </script>
+
+
+    <!--<link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos-ea.css">-->
+    <link rel="stylesheet" href="https://br.cdn.dos.zone/js-dos/latest/js-dos.css">
+    <link rel="stylesheet" href="/css/tailwind.css?id=91550be4021f1890ac412c8386b012e2">
+
+    <link rel="me" href="https://twitter.com/intent/user?screen_name=caiiiycuk" type="text/html">
+    <link rel="me" href="mailto:caiiiycuk@gmail.com">
+
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript" >
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();
+    for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+    ym(86987640, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true
+    });
+    </script>
+    <!-- /Yandex.Metrika counter -->
+</head>
+
+<body class="bg-base-200" >
+    <script type="text/javascript">
+        const theme = localStorage.getItem("dos.zone.theme");
+        if (theme !== null) {
+            document.body.setAttribute("data-theme", theme);
+        }
+    </script>
+
+    <div class="e-navbar">
+        <svg xmlns="http://www.w3.org/2000/svg" class="e-reload" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <div class="e-address">
+            <div class="e-logo"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="e-locked" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <div class="e-address-text"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="e-copy" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="navbar bg-base-300 min-h-min overflow-x-clip">
+        <svg class="flex-shrink-0 w-8 h-8 cursor-pointer genre-switch hover:text-primary" fill="currentColor" stroke="currentColor"  viewBox="0 -960 960 960"  xmlns="http://www.w3.org/2000/svg"><path d="M140.001-260.001v-45.384h488.46v45.384h-488.46Zm647.998-47L613.616-480.615l173.768-172.999L819.999-621 678.845-480.615l141.769 140.999-32.615 32.615ZM140.001-458.924v-45.383h371.537v45.383H140.001Zm0-195.691v-45.384h488.46v45.384h-488.46Z"></path></svg>
+        <div class="container mx-auto px-2">
+            <div class="flex-1 flex row whitespace-nowrap overflow-hidden mr-5 text-sm breadcrumbs">
+                <ul>
+                    <li class="font-bold">
+                            <a href="/">DOS Zone</a>
+                        </li>
+                </ul>
+            </div>
+            <div class="flex-none">
+                <div id="theme-select"></div>
+            </div>
+            <details class="dropdown">
+                <summary class="m-1 btn btn-sm btn-ghost">
+                    <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512">
+                        <path d="M363,176,246,464h47.24l24.49-58h90.54l24.49,58H480ZM336.31,362,363,279.85,389.69,362Z"></path>
+                        <path d="M272,320c-.25-.19-20.59-15.77-45.42-42.67,39.58-53.64,62-114.61,71.15-143.33H352V90H214V48H170V90H32v44H251.25c-9.52,26.95-27.05,69.5-53.79,108.36-32.68-43.44-47.14-75.88-47.33-76.22L143,152l-38,22,6.87,13.86c.89,1.56,17.19,37.9,54.71,86.57.92,1.21,1.85,2.39,2.78,3.57-49.72,56.86-89.15,79.09-89.66,79.47L64,368l23,36,19.3-11.47c2.2-1.67,41.33-24,92-80.78,24.52,26.28,43.22,40.83,44.3,41.67L255,362Z"></path>
+                    </svg> 
+                    <svg width="12px" height="12px" class="hidden h-2 w-2 fill-current opacity-60 sm:inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048">
+                        <path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path>
+                    </svg>
+                </summary>
+                <ul class="p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-52">
+                    
+                        <li><a rel="alternate" hreflang="en-US" href="https://dos.zone">English</a></li>
+                    
+                        <li><a rel="alternate" hreflang="ru-RU" href="https://dos.zone/ru">Русский</a></li>
+                    
+                        <li><a rel="alternate" hreflang="fr" href="https://dos.zone/fr">Français</a></li>
+                    
+                </ul>
+            </details>
+            <div class="flex-shrink-0 hidden md:flex flex-row">
+                <div class="divider divider-horizontal mx-1"></div>
+                <a href="https://t.me/gamebase54" class="ml-1 mr-2" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/carterlogo.png" alt="twitter" width="20"/>
+                </a>
+                <a
+                    href="https://twitter.com/intent/user?screen_name=caiiiycuk"
+                    class="ml-1 mr-2"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    <img src="/assets/twitter.svg" alt="twitter" width="20"/>
+                </a>
+                <a href="https://t.me/doszonechat" class="ml-1 mr-2" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/telegram.svg" alt="twitter" width="20"/>
+                </a>
+                <a href="https://discord.com/invite/hMVYEbG" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/discord.svg" alt="discord" width="24"/>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-row">
+        <div class="px-4 bg-base-300 flex-shrink-0 genre-pane flex-col items-start gap-4 py-3 px-2 font-bold text-sm">
+            <a href="/ru/" class="hidden show-if-ru">Игры на русском</a>
+            <a href="/mp/" class="text-lg flex flex-row items-center gap-2">
+                Multiplayer hub
+                <img class="w-6" src="https://cdn.dos.zone/mp/hubicon_2.png" alt="MP Hub logo" />
+            </a>
+            <a href="/top-games/">Top games</a>
+            <a href="/mobile/">Mobile</a>
+            <h2 class="text-lg text-primary">A - z</h2>
+            <div class="grid grid-cols-7 gap-2">
+                <a href="/starts-with/number" class="hover:text-primary">#</a>
+                
+                    <a href="/starts-with/a" class="hover:text-primary">A</a>
+                
+                    <a href="/starts-with/b" class="hover:text-primary">B</a>
+                
+                    <a href="/starts-with/c" class="hover:text-primary">C</a>
+                
+                    <a href="/starts-with/d" class="hover:text-primary">D</a>
+                
+                    <a href="/starts-with/e" class="hover:text-primary">E</a>
+                
+                    <a href="/starts-with/f" class="hover:text-primary">F</a>
+                
+                    <a href="/starts-with/g" class="hover:text-primary">G</a>
+                
+                    <a href="/starts-with/h" class="hover:text-primary">H</a>
+                
+                    <a href="/starts-with/i" class="hover:text-primary">I</a>
+                
+                    <a href="/starts-with/j" class="hover:text-primary">J</a>
+                
+                    <a href="/starts-with/k" class="hover:text-primary">K</a>
+                
+                    <a href="/starts-with/l" class="hover:text-primary">L</a>
+                
+                    <a href="/starts-with/m" class="hover:text-primary">M</a>
+                
+                    <a href="/starts-with/n" class="hover:text-primary">N</a>
+                
+                    <a href="/starts-with/o" class="hover:text-primary">O</a>
+                
+                    <a href="/starts-with/p" class="hover:text-primary">P</a>
+                
+                    <a href="/starts-with/q" class="hover:text-primary">Q</a>
+                
+                    <a href="/starts-with/r" class="hover:text-primary">R</a>
+                
+                    <a href="/starts-with/s" class="hover:text-primary">S</a>
+                
+                    <a href="/starts-with/t" class="hover:text-primary">T</a>
+                
+                    <a href="/starts-with/u" class="hover:text-primary">U</a>
+                
+                    <a href="/starts-with/v" class="hover:text-primary">V</a>
+                
+                    <a href="/starts-with/w" class="hover:text-primary">W</a>
+                
+                    <a href="/starts-with/x" class="hover:text-primary">X</a>
+                
+                    <a href="/starts-with/y" class="hover:text-primary">Y</a>
+                
+                    <a href="/starts-with/z" class="hover:text-primary">Z</a>
+                
+            </div>
+
+            <h2 class="text-lg text-primary">Genre</h2>
+            <a class="flex flex-row items-center gap-4" href="/3dfx/">
+                <p><span class="text-lg font-bold mr-0.5">3D</span>fx</p>
+                <img class="w-12" src="https://cdn.dos.zone/3dfx.png" alt="3Dfx logo" />
+            </a>
+            
+                <a href="/genre/3d-action">3D Action (67)</a>
+            
+                <a href="/genre/4x">4X (5)</a>
+            
+                <a href="/genre/action">Action (879)</a>
+            
+                <a href="/genre/adventure">Adventure (275)</a>
+            
+                <a href="/genre/arcade">Arcade (218)</a>
+            
+                <a href="/genre/beat-em-up">Beat'em up (11)</a>
+            
+                <a href="/genre/board">Board (155)</a>
+            
+                <a href="/genre/card">Card (20)</a>
+            
+                <a href="/genre/chess">Chess (10)</a>
+            
+                <a href="/genre/compilation">Compilation (1)</a>
+            
+                <a href="/genre/dungeon-crawler">Dungeon Crawler (29)</a>
+            
+                <a href="/genre/economic">Economic (36)</a>
+            
+                <a href="/genre/educational">Educational (147)</a>
+            
+                <a href="/genre/fighting">Fighting (49)</a>
+            
+                <a href="/genre/fps">First Person Shooter (76)</a>
+            
+                <a href="/genre/fmv">Full Motion Video (2)</a>
+            
+                <a href="/genre/games-for-windows">Games for Windows (72)</a>
+            
+                <a href="/genre/ibm-pc">IBM PC (1993)</a>
+            
+                <a href="/genre/management">Management (36)</a>
+            
+                <a href="/genre/ms-dos">MS-DOS (2046)</a>
+            
+                <a href="/genre/other-sim">Other-sim (1)</a>
+            
+                <a href="/genre/platformer">Platformer (190)</a>
+            
+                <a href="/genre/puzzle">Puzzle (284)</a>
+            
+                <a href="/genre/quest">Quest (130)</a>
+            
+                <a href="/genre/racing">Racing (101)</a>
+            
+                <a href="/genre/rts">Real Time Strategy (55)</a>
+            
+                <a href="/genre/rpg">RPG (121)</a>
+            
+                <a href="/genre/shmup">Shoot'em up (92)</a>
+            
+                <a href="/genre/simulator">Simulator (210)</a>
+            
+                <a href="/genre/space">Space (12)</a>
+            
+                <a href="/genre/sport">Sport (149)</a>
+            
+                <a href="/genre/strategy">Strategy (347)</a>
+            
+                <a href="/genre/text-based">Text-based (83)</a>
+            
+                <a href="/genre/tps">Third Person Shooter (12)</a>
+            
+                <a href="/genre/turn-based-rpg">Turn Based RPG (25)</a>
+            
+                <a href="/genre/tbs">Turn Based Strategy (44)</a>
+            
+                <a href="/genre/wargame">Wargame (8)</a>
+            
+                <a href="/genre/windows-31">Windows 3.1 (11)</a>
+            
+                <a href="/genre/windows-95">Windows 95 (71)</a>
+            
+                <a href="/genre/windows-98">Windows 98 (4)</a>
+            
+            <a href="/benchmarks/">
+                Benchmarks
+            </a>
+        </div>
+        <div class="flex-grow">
+            <div class="container mx-auto py-8 px-2">
+    <div class="-mt-2 mb-4 flex justify-center">
+        <div class="flex flex-row items-center flex-grow flex-wrap-reverse justify-between gap-2">
+    <div class="flex flex-col gap-2">
+        <div class="flex flex-row items-center gap-2 flex-wrap">
+            <div class="link a_z">A - z</div>
+            <span class="text-xl">•</span>
+            <a class="link" href="/top-games" target="_blank">Top</a>
+            <span class="text-xl">•</span>
+            <a class="link" href="https://talks.dos.zone" target="_blank">Forum</a>
+            <span class="text-xl">•</span>
+            <a class="link" href="/faq" 
+                target="_self">FAQ</a>
+            <span class="text-xl">•</span>
+            <a class="link flex flex-row gap-1 items-center" href="https://v8.js-dos.com/key" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mt-1 text-yellow-500">
+                    <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                </svg>
+                
+                Subscription
+            </a>
+            <span class="text-xl">•</span>
+            <a class="link" href="/publish" 
+                target="_self">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+            </a>
+            <span class="text-xl">•</span>
+            <a class="link" href="/download" 
+                target="_self">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                </svg>
+            </a>
+        </div>
+        <div class="flex flex-row justify-center">
+            <a class="link flex flex-row gap-2 items-center font-bold" href="/mp/" target="_self">
+                <img src="https://cdn.dos.zone/mp/hubicon_2.png" class="w-4 h-4 mt-1" alt="Logo" />
+                Multiplayer hub
+            </a>
+        </div>
+    </div>
+    <div id="search" class="dropdown w-full max-w-md flex-shrink"></div>
+</div>
+    </div>
+
+    <div class="prose">
+        <h1>404. Page not found.</h1>
+        
+
+<h2 class="my-8" id="catalog">Catalog of DOS Games:</h2>
+<div class="ml-8">
+    <a class="badge badge-error mt-4 mr-4 hover:badge-primary  py-4 px-4 uppercase" href="" target="_self">
+        Multiplayer hub
+    </a>
+    <a class="badge badge-primary mt-4 mr-4 hover:badge-accent py-4 px-4" href="/3dfx" target="_self">3dfx</a>
+    <a class="badge badge-accent mt-4 mr-4 hover:badge-primary py-4 px-4" href="/mobile" target="_self">Mobile</a>
+    <a class="badge badge-primary mt-4 mr-4 hover:badge-accent py-4 px-4" href="/top-games" target="_blank">TOP</a>
+    <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/number" target="_self">#</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/a" target="_self">A</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/b" target="_self">B</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/c" target="_self">C</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/d" target="_self">D</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/e" target="_self">E</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/f" target="_self">F</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/g" target="_self">G</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/h" target="_self">H</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/i" target="_self">I</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/j" target="_self">J</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/k" target="_self">K</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/l" target="_self">L</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/m" target="_self">M</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/n" target="_self">N</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/o" target="_self">O</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/p" target="_self">P</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/q" target="_self">Q</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/r" target="_self">R</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/s" target="_self">S</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/t" target="_self">T</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/u" target="_self">U</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/v" target="_self">V</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/w" target="_self">W</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/x" target="_self">X</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/y" target="_self">Y</a>
+    
+        <a class="badge mt-4 mr-4 hover:badge-primary py-4 px-4" href="/starts-with/z" target="_self">Z</a>
+    
+</div>
+    </div>
+
+</div>
+        </div>
+    </div>
+
+    <div class="bg-neutral">
+        <footer class="container mx-auto footer mt-16 p-10 text-neutral-content">
+            <div>
+                <img src="/assets/logo192.png" alt="logo" loading="lazy" width="72" height="72">
+                <p>@caiiiycuk, 2026</p>
+                <p>Powered by <a class="link link-hover underline" href="https://js-dos.com" rel="nofollow" target="_blank">js-dos</a></p>
+            </div> 
+            <div>
+                <span class="footer-title">More</span> 
+                <a class="link link-hover" href="/blog">Blog</a> 
+                <a class="link link-hover" href="/preferences">Preferences</a> 
+                <a class="link link-hover" href="/studio-v8" target="_blank">Game Studio 8.xx</a> 
+                <a class="link link-hover" href="/studio" target="_blank">Game Studio 7.xx (legacy)</a> 
+                <a class="link link-hover" href="https://github.com/js-dos/repository" rel="nofollow" target="_blank">GitHub</a> 
+            </div> 
+            <div id="donate">
+                <span class="footer-title">Support</span> 
+                <a class="link link-hover" href="/support" rel="nofollow">Support</a> 
+                <a class="link link-hover" href="/team" rel="_self">Team</a> 
+                <a class="link link-hover" href="/dos-zone-manifest" rel="_self">Manifest</a> 
+            </div> 
+            <div>
+                <span class="footer-title">Legal</span> 
+                <a class="link link-hover" href="/dmca" target="_blank">DMCA</a> 
+                <a class="link link-hover" href="mailto:dz.caiiiycuk@gmail.com" rel="nofollow" target="_blank">Contact Us</a> 
+                <a class="link link-hover" href="/privacy-policy" rel="nofollow" target="_blank">Privacy policy</a> 
+            </div>
+        </footer>
+    </div>
+
+    <div id="file-manager"  ></div>
+    <div id="alert"></div>
+    <div id="meta" data-slug="index" data-title="DOS Zone" hidden></div>
+
+    <script src="/js/dynamics.js?id=612a0a4395d096a1c9f2d683f68c8b2f"></script>
+</body>
+
+</html>

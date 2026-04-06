@@ -1,0 +1,94 @@
+﻿Analyzing 3 items...                                            
+
+warning - The value of the field '_foundDbDump' isn't used - lib\widget\hacker_tycoon_game.dart:50:8 - unused_field
+  error - Expected an identifier - lib\widget\hacker_tycoon_game.dart:111:245 - missing_identifier
+   info - Statements in a for should be enclosed in a block - lib\widget\hacker_tycoon_game.dart:375:36 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\widget\hacker_tycoon_game.dart:402:26 - curly_braces_in_flow_control_structures
+   info - 'RawKeyboardListener' is deprecated and shouldn't be used. Use KeyboardListener instead. This feature was deprecated after v3.18.0-2.0.pre - lib\widget\hacker_tycoon_game.dart:616:38 - deprecated_member_use
+   info - 'RawKeyDownEvent' is deprecated and shouldn't be used. Use KeyDownEvent instead. This feature was deprecated after v3.18.0-2.0.pre - lib\widget\hacker_tycoon_game.dart:619:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\hacker_tycoon_game.dart:678:78 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\hacker_tycoon_game.dart:679:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\hacker_tycoon_game.dart:702:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\hacker_tycoon_game.dart:727:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\hacker_tycoon_game.dart:756:56 - deprecated_member_use
+   info - The private field _maxSpeed could be 'final' - lib\widget\neon_racer_game.dart:63:10 - prefer_final_fields
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:195:24 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:196:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:197:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:198:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:199:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\widget\neon_racer_game.dart:200:12 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:397:88 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:397:119 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:418:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:432:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:450:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:459:74 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:471:105 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:488:82 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:514:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:516:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:601:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:765:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:809:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:822:78 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:858:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:902:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:914:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:921:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:924:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:937:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:942:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:970:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:992:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:1003:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:1005:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:1011:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\neon_racer_game.dart:1024:80 - deprecated_member_use
+   info - The private field _heroMaxHp could be 'final' - lib\widget\void_rpg_game.dart:33:10 - prefer_final_fields
+   info - The private field _heroMaxStamina could be 'final' - lib\widget\void_rpg_game.dart:35:10 - prefer_final_fields
+   info - The private field _bossMaxHp could be 'final' - lib\widget\void_rpg_game.dart:43:10 - prefer_final_fields
+warning - The value of the field '_bossWindup' isn't used - lib\widget\void_rpg_game.dart:48:10 - unused_field
+warning - The value of the field '_bossAttackLanded' isn't used - lib\widget\void_rpg_game.dart:49:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:418:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:467:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:536:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:554:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:574:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:582:74 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:677:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:678:57 - deprecated_member_use
+  error - The getter 'white20' isn't defined for the type 'Colors' - lib\widget\void_rpg_game.dart:681:70 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:744:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:758:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:790:94 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:803:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:810:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:813:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:825:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:829:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:833:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:852:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:903:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:944:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:951:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:976:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widget\void_rpg_game.dart:989:64 - deprecated_member_use
+
+flutter : 74 issues found. 
+(ran in 1.5s)
+At line:1 char:1
++ flutter analyze lib/widge
+t/neon_racer_game.dart 
+lib/widget/void_rpg_g ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (74   
+  issues found. (ran in    
+ 1.5s):String) [], Remo    
+teException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 

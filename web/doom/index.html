@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DOOM (1993) - MS-DOS v6.22</title>
+    <!-- JS-DOS 6.22 Local -->
+    <script src="js-dos.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        html, body, #dosbox {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #ccc;
+            font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+        }
+        
+        #bios-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .bios-header {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .bios-log {
+            flex-grow: 1;
+            overflow: hidden;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .bios-footer {
+            margin-top: 20px;
+            color: #fff;
+            text-align: center;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        canvas { 
+            image-rendering: pixelated;
+            object-fit: contain;
+            width: 100% !important;
+            height: 100% !important;
+            cursor: crosshair;
+        }
+
+        .dosbox-container { background: #000 !important; }
+
+        /* Virtual HUD for Mobile */
+        #mobile-hud {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            height: 160px;
+            display: none;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 500;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        @media (max-width: 1024px) {
+            #mobile-hud { display: flex; }
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            background: rgba(80, 80, 80, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: background 0.1s, transform 0.1s;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            background: rgba(255, 0, 0, 0.6);
+            transform: scale(0.9);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+
+        .btn-fire { width: 70px; height: 70px; border-radius: 50%; background: rgba(200, 0, 0, 0.4); }
+        .btn-use { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 5px; }
+        
+        #instruction-tag {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #50FA7B;
+            border: 1px solid #50FA7B;
+            pointer-events: none;
+            z-index: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="bios-overlay">
+        <div class="bios-header">
+            <div>AMIBIOS (C)1992 American Megatrends Inc.,</div>
+            <div>UAC-357 (C)1993 Union Aerospace Corporation</div>
+            <div>CPU: Intel(R) OverDrive(TM) @ 66MHz</div>
+            <div id="memory-check">Memory Test: 0K OK</div>
+        </div>
+        <div id="bios-log" class="bios-log"></div>
+        <div id="bios-footer" class="bios-footer">PRESS ANY KEY TO BOOT...</div>
+    </div>
+
+    <canvas id="dosbox"></canvas>
+
+    <div id="instruction-tag">CLICK TO CAPTURE MOUSE (ESC TO RELEASE)</div>
+
+    <div id="mobile-hud">
+        <div class="dpad">
+            <div id="ctrl-up" class="btn btn-up">▲</div>
+            <div id="ctrl-left" class="btn btn-left">◀</div>
+            <div id="ctrl-right" class="btn btn-right">▶</div>
+            <div id="ctrl-down" class="btn btn-down">▼</div>
+        </div>
+        <div class="action-buttons">
+            <div id="ctrl-use" class="btn btn-use">USE</div>
+            <div id="ctrl-fire" class="btn btn-fire">FIRE</div>
+        </div>
+    </div>
+
+    <script>
+        const logContainer = document.getElementById('bios-log');
+        const memoryCheck = document.getElementById('memory-check');
+        const footer = document.getElementById('bios-footer');
+        const overlay = document.getElementById('bios-overlay');
+        const bundleUrl = "doom.jsdos";
+
+        const bootLog = [
+            "Detecting IDE Primary Master ... [DOOM_DRIVE]",
+            "Detecting IDE Primary Slave  ... [NONE]",
+            "Probing for network adapters ... [NE2000 COMPATIBLE]",
+            "IPX/SPX Stack Loading ... OK",
+            "",
+            "MS-DOS 6.22 is starting...",
+            "",
+            "SET BLASTER=A220 I5 D1 H5 P330 T6",
+            "DEVICE=C:\\DOS\\HIMEM.SYS",
+            "DEVICE=C:\\DOS\\EMM386.EXE NOEMS",
+            "C:\\DOS\\SMARTDRV.EXE /X",
+            "C:\\DOS\\MSCDEX.EXE /D:MSCD001",
+            "C:\\SOUND\\INIT_AUDIO.EXE",
+            "",
+            "A:\\>D:",
+            "D:\\>CD DOOM",
+            "D:\\DOOM>DOOM.EXE",
+            "",
+            "Loading DOOM engine...",
+            "Checking WAD consistency...",
+            "Initializing sound system (SoundBlaster)...",
+            "Ready for deployment."
+        ];
+
+        let logIndex = 0;
+        function printLog() {
+            if (logIndex < bootLog.length) {
+                const line = document.createElement('div');
+                line.innerText = bootLog[logIndex];
+                logContainer.appendChild(line);
+                logIndex++;
+                setTimeout(printLog, 50 + Math.random() * 150);
+            }
+        }
+
+        let mem = 0;
+        function runMemoryCheck() {
+            if (mem < 65536) {
+                mem += 1024 + Math.floor(Math.random() * 2048);
+                memoryCheck.innerText = `Memory Test: ${mem}K OK`;
+                setTimeout(runMemoryCheck, 10);
+            } else {
+                memoryCheck.innerText = "Memory Test: 65536K OK";
+                printLog();
+            }
+        }
+
+        runMemoryCheck();
+
+        const canvas = document.getElementById("dosbox");
+
+        function sendKey(code, isDown) {
+            const eventType = isDown ? 'keydown' : 'keyup';
+            const event = new KeyboardEvent(eventType, {
+                keyCode: code,
+                which: code,
+                code: getKeyCodeString(code),
+                bubbles: true
+            });
+            window.dispatchEvent(event);
+            canvas.dispatchEvent(event);
+        }
+
+        function getKeyCodeString(code) {
+            switch(code) {
+                case 38: return 'ArrowUp';
+                case 40: return 'ArrowDown';
+                case 37: return 'ArrowLeft';
+                case 39: return 'ArrowRight';
+                case 17: return 'ControlLeft';
+                case 32: return 'Space';
+                default: return '';
+            }
+        }
+
+        function setupButton(id, code) {
+            const el = document.getElementById(id);
+            const startHandler = (e) => { e.preventDefault(); sendKey(code, true); };
+            const endHandler = (e) => { e.preventDefault(); sendKey(code, false); };
+            el.addEventListener('mousedown', startHandler);
+            el.addEventListener('mouseup', endHandler);
+            el.addEventListener('touchstart', startHandler);
+            el.addEventListener('touchend', endHandler);
+            el.addEventListener('touchcancel', endHandler);
+        }
+
+        setupButton('ctrl-up', 38);
+        setupButton('ctrl-down', 40);
+        setupButton('ctrl-left', 37);
+        setupButton('ctrl-right', 39);
+        setupButton('ctrl-fire', 17); // Ctrl for Fire
+        setupButton('ctrl-use', 32);  // Space for Use
+
+        // Mouse Capture Implementation
+        canvas.addEventListener('click', () => {
+            if (canvas.requestPointerLock) {
+                canvas.requestPointerLock();
+            }
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            const tag = document.getElementById('instruction-tag');
+            if (document.pointerLockElement === canvas) {
+                tag.style.display = 'none';
+            } else {
+                tag.style.display = 'block';
+            }
+        });
+
+        let started = false;
+        function startEngine() {
+            if (started) return;
+            started = true;
+            footer.innerText = "BOOTING...";
+            
+            try {
+                Dos(canvas, {
+                    wdosboxUrl: "wdosbox.js",
+                    autolock: true,
+                    cycles: "max"
+                }).ready((fs, main) => {
+                    fs.extract(bundleUrl).then(() => {
+                        overlay.style.display = 'none';
+                        canvas.focus();
+                        if (canvas.requestPointerLock) {
+                            canvas.requestPointerLock();
+                        }
+                        main(["-c", "DOOM.EXE"]);
+                    });
+                }).catch((err) => {
+                    footer.innerText = "SYSTEM HALTED: " + (err.message || "Engine Error");
+                    footer.style.color = "#f00";
+                });
+            } catch (e) {
+                footer.innerText = "LOAD ERROR: " + (e.message || "Init Error");
+                footer.style.color = "#f00";
+            }
+        }
+
+        overlay.addEventListener('click', startEngine);
+        window.addEventListener('keydown', (e) => {
+            if (!started) startEngine();
+        });
+    </script>
+</body>
+</html>

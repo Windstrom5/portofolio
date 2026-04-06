@@ -52,8 +52,10 @@ class _CursorGlowState extends State<CursorGlow> {
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                Colors.cyanAccent.withOpacity(0.12),
-                                Colors.cyanAccent.withOpacity(0.04),
+                                const Color(0xFF7B2FF7)
+                                    .withOpacity(0.14), // ZTMY purple
+                                const Color(0xFFFF2D78)
+                                    .withOpacity(0.06), // ZTMY pink
                                 Colors.transparent,
                               ],
                             ),

@@ -468,6 +468,7 @@ class _LinuxStyleBootLoginState extends State<LinuxStyleBootLogin> {
     "[  OK  ] Started Network Manager.",
     "[  OK  ] Started OpenSSH server daemon.",
     "[  OK  ] Finished Load/Save Random Seed.",
+    "[  OK  ] Started Midnight Audio Service (zutomayo.service)",
     "[  OK  ] Reached target Graphical Interface.",
   ];
 
@@ -539,7 +540,7 @@ class _LinuxStyleBootLoginState extends State<LinuxStyleBootLogin> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SingleChildScrollView(
-        controller: _scrollController, // 👈 REQUIRED 
+        controller: _scrollController, // 👈 REQUIRED
         child: Padding(
           padding: EdgeInsets.all(16.r),
           child: Column(

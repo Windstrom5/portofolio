@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../model/project_model.dart';
-import 'hud_components.dart'; // Reuse HUD styling if available or standard widgets
 
 class ProjectDetailView extends StatefulWidget {
   final ProjectModel project;

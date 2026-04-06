@@ -43,7 +43,7 @@ final List<EducationModel> allEducation = [
     description:
         "A premier private university in Yogyakarta known for its rigorous curriculum in technology and business. The Information Systems program bridges the gap between technical software engineering and strategic business management.",
     learnings:
-        "• Advanced Software Engineering.\n• Enterprise Systems Analysis & Design.\n• Business Intelligence & Data Mining.\n• Database Management (SQL/NoSQL).\n• IT Project Management & Agile Methodologies.",
+        "- Advanced Software Engineering.\n- Enterprise Systems Analysis & Design.\n- Business Intelligence & Data Mining.\n- Database Management (SQL/NoSQL).\n- IT Project Management & Agile Methodologies.",
     skills: [
       "Software Engineering",
       "System Analysis",
@@ -57,11 +57,11 @@ final List<EducationModel> allEducation = [
     schoolName: "SMA Negeri 8 Samarinda",
     location: "Samarinda, Indonesia",
     years: "2017 - 2020",
-    degreeType: "HIGH SCHOOL GRADUATE",
+    degreeType: "HIGH SCHOOL GRADUATE (IPA)",
     description:
         "High school education focusing on comprehensive academic development and preparing students for higher education in technology and sciences.",
     learnings:
-        "• Advanced Mathematics & Physics.\n• Social & Organizational leadership.\n• Scientific Research Foundations.",
+        "- Advanced Mathematics & Physics.\n- Social & Organizational leadership.\n- Scientific Research Foundations.",
     skills: ["Mathematics", "Physics", "Logic", "Leadership"],
   ),
   EducationModel(
@@ -72,7 +72,7 @@ final List<EducationModel> allEducation = [
     description:
         "Secondary education focusing on foundational academic skills and developing early interests in science and technology.",
     learnings:
-        "• Basic Sciences & Mathematics.\n• Foundational Computer Literacy.\n• Extracurricular leadership as class representative.",
+        "- Basic Sciences & Mathematics.\n- Foundational Computer Literacy.\n- Extracurricular leadership as class representative.",
     skills: ["General Science", "Basic Math", "Quick Learning", "Teamwork"],
   ),
 ];
