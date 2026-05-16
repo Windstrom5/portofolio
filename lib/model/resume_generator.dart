@@ -529,6 +529,7 @@ class ResumePdf {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
+                      _buildAnchor('achievements'),
                       _sectionHeader('ACHIEVEMENTS', accentCyan),
                       ...achievements.map((ach) => _buildAchievementItem(
                           ach, accentCyan, textPrimary, textSecondary)),
@@ -744,8 +745,8 @@ class ResumePdf {
       ),
     ));
 
-    layout.add(pw.SizedBox(height: 30));
-    layout.add(_buildInteractiveNavBar(accentPink, PdfColors.white, accentCyan));
+    layout.add(pw.SizedBox(height: 35));
+    // layout.add(_buildInteractiveNavBar(accentPink, PdfColors.white, accentCyan)); // Removed nav bar for better elegance
 
     // --- Executive Summary ---
     layout.add(_buildAnchor('summary'));
@@ -1010,6 +1011,36 @@ class ResumePdf {
               ])),
         ])));
 
+    layout.add(pw.SizedBox(height: 30));
+
+    // --- Achievements & Interests ---
+    layout.add(pw.Padding(
+        padding: horizontalPadding,
+        child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                  child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        _buildAnchor('achievements'),
+                        _elegantSectionHeader('ACHIEVEMENTS', accentCyan, accentPink),
+                        ...achievements.map((ach) => _buildElegantAchievementItem(ach, accentCyan, textPrimary, textSecondary)),
+                      ])),
+              pw.SizedBox(width: 40),
+              pw.Expanded(
+                  child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        _elegantSectionHeader('FIELD INTERESTS', accentCyan, accentPink),
+                        _buildElegantInterestTag('Cloud Native Architecture', accentPink, textSecondary),
+                        _buildElegantInterestTag('High-Frequency Systems', accentPink, textSecondary),
+                        _buildElegantInterestTag('AI/ML Integration', accentPink, textSecondary),
+                        _buildElegantInterestTag('Game Engine Research', accentPink, textSecondary),
+                      ])),
+            ])));
+
+    layout.add(pw.SizedBox(height: 30));
     layout.add(pw.Padding(
       padding: horizontalPadding,
       child: _buildFinalCTA(accentPink, textPrimary, PdfColors.white),
@@ -1086,6 +1117,61 @@ class ResumePdf {
           ),
           pw.SizedBox(height: 6),
           pw.Container(height: 2, width: 40, color: accentPink),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildElegantAchievementItem(AchievementModel ach, PdfColor accent,
+      PdfColor textP, PdfColor textS) {
+    final String url = _getAssetUrl(ach.attachmentPath);
+    final widget = pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      margin: const pw.EdgeInsets.only(bottom: 15),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(4),
+        border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.5),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(ach.certificateName.toUpperCase(),
+              style: pw.TextStyle(
+                  fontSize: 10, fontWeight: pw.FontWeight.bold, color: textP)),
+          pw.SizedBox(height: 4),
+          pw.Text(ach.organizationName,
+              style: pw.TextStyle(
+                  fontSize: 8.5, color: accent, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 2),
+          pw.Text(ach.date,
+              style: pw.TextStyle(
+                  fontSize: 8, color: textS, fontStyle: pw.FontStyle.italic)),
+        ],
+      ),
+    );
+    return url.isNotEmpty ? pw.UrlLink(destination: url, child: widget) : widget;
+  }
+
+  pw.Widget _buildElegantInterestTag(
+      String label, PdfColor accent, PdfColor textS) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 6),
+      child: pw.Row(
+        children: [
+          pw.Container(
+            width: 4,
+            height: 4,
+            decoration: pw.BoxDecoration(
+              color: accent,
+              shape: pw.BoxShape.circle,
+            ),
+          ),
+          pw.SizedBox(width: 10),
+          pw.Text(
+            label,
+            style: pw.TextStyle(fontSize: 9, color: textS),
+          ),
         ],
       ),
     );
@@ -1292,21 +1378,42 @@ class ResumePdf {
 
   pw.Widget _buildAchievementItem(AchievementModel ach, PdfColor accent,
       PdfColor textPrimary, PdfColor textSec) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 12),
+    final String url = _getAssetUrl(ach.attachmentPath);
+    final widget = pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColor.fromInt(0xFFE2E8F0), width: 0.3),
+        borderRadius: pw.BorderRadius.circular(4),
+        color: PdfColor.fromInt(0xFFF8FAFC),
+      ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(ach.certificateName,
+          pw.Text(ach.certificateName.toUpperCase(),
               style: pw.TextStyle(
-                  fontSize: 8,
+                  fontSize: 8.5,
                   fontWeight: pw.FontWeight.bold,
-                  color: textPrimary)),
+                  color: textPrimary,
+                  letterSpacing: 0.5)),
+          pw.SizedBox(height: 2),
           pw.Text(ach.organizationName,
-              style: pw.TextStyle(fontSize: 7, color: accent)),
+              style: pw.TextStyle(
+                  fontSize: 7.5, color: accent, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text(ach.date,
+              style: pw.TextStyle(
+                  fontSize: 7, color: textSec, fontStyle: pw.FontStyle.italic)),
         ],
       ),
     );
+    return url.isNotEmpty ? pw.UrlLink(destination: url, child: widget) : widget;
+  }
+
+  String _getAssetUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    // Use single assets/ prefix for clean URLs (requires files to be in web/assets)
+    final fileName = path.split('/').last;
+    return 'https://windstrom5profile.netlify.app/assets/$fileName';
   }
 
   pw.Widget _buildInterestTag(
@@ -1599,6 +1706,23 @@ class ResumePdf {
                 );
               }).toList(),
             ),
+            pw.SizedBox(height: 30),
+
+            // Achievements
+            _buildAnchor('achievements'),
+            _zenSectionHeader('ACHIEVEMENTS & CERTIFICATIONS', accentCyan, accentPink),
+            pw.Wrap(
+              spacing: 20,
+              runSpacing: 15,
+              children: achievements.map((ach) {
+                return pw.Container(
+                  width: 245,
+                  child: _buildAchievementItem(ach, accentCyan, textPrimary, textSecondary),
+                );
+              }).toList(),
+            ),
+            pw.SizedBox(height: 20),
+
             _buildFinalCTA(accentPink, accentCyan, surfaceColor),
           ],
         ),
@@ -1877,11 +2001,11 @@ class ResumePdf {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
-          _navItem('SUMMARY', 'summary', accent),
           _navItem('EXPERIENCE', 'experience', accent),
           _navItem('PROJECTS', 'projects', accent),
           _navItem('SKILLS', 'skills', accent),
           _navItem('EDUCATION', 'education', accent),
+          _navItem('CERTIFICATES', 'achievements', accent),
         ],
       ),
     );

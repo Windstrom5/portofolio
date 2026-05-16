@@ -145,6 +145,7 @@ flutter:
     - assets/doom/face_healthy.png
     - assets/doom/face_hurt.png
     - assets/doom/wall.png
+    - assets/TOEFL_Angga.pdf
     - fonts/
   fonts:
     - family: Retro

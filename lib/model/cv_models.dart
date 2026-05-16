@@ -24,6 +24,7 @@ class AchievementModel {
   final String date;
   final String description;
   final List<String> skills;
+  final String? attachmentPath;
 
   AchievementModel({
     required this.certificateName,
@@ -31,6 +32,7 @@ class AchievementModel {
     required this.date,
     required this.description,
     required this.skills,
+    this.attachmentPath,
   });
 }
 
@@ -85,6 +87,7 @@ final List<AchievementModel> allAchievements = [
     description:
         "Specialized training in managing research lifecycles, ensuring data integrity, and leading collaborative research teams.",
     skills: ["Research Ops", "Team Leadership", "Data Integrity"],
+    attachmentPath: "assets/Coursera_Researcher_Management.jpg",
   ),
   AchievementModel(
     certificateName: "English Score Certificate",
@@ -93,5 +96,15 @@ final List<AchievementModel> allAchievements = [
     description:
         "Internationally recognized certification validating professional proficiency in English reading, writing, listening, and speaking.",
     skills: ["C1 Advanced", "Business English", "Communication"],
+    attachmentPath: "assets/EnglishScore.jpg",
+  ),
+  AchievementModel(
+    certificateName: "TOEFL ITP Certificate",
+    organizationName: "IIEF",
+    date: "Apr 2026",
+    description:
+        "Achieved a total score of 517 (Listening: 58, Structure: 44, Reading: 53), validating professional proficiency in English listening, structure, and reading comprehension.",
+    skills: ["English Proficiency", "Listening", "Grammar", "Reading"],
+    attachmentPath: "assets/TOEFL_Angga.pdf",
   ),
 ];
