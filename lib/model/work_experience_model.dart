@@ -25,11 +25,11 @@ final List<WorkExperienceModel> allWorkExperiences = [
     location: 'Yogyakarta, Indonesia',
     period: 'Oct 2025 - Apr 2026',
     points: [
-      'Architecting and maintaining the SIMRS (Sistem Informasi Manajemen Rumah Sakit) enterprise system.',
-      'Developed high-performance backend services using Laravel, focusing on scalability and data integrity.',
-      'Collaborated with cross-functional teams to streamline hospital management workflows and improve operational efficiency.',
+      'Developed the inpatient (rawat inap) module of the SIMRS using Laravel.',
+      'Built backend features for patient records and hospitalization workflows.',
+      'Collaborated with the team to integrate the module with the overall hospital system.',
     ],
-    techStack: ['Laravel', 'PHP', 'MySQL', 'REST API', 'Clean Architecture'],
+    techStack: ['Laravel', 'PHP', 'MySQL', 'REST API'],
   ),
   WorkExperienceModel(
     title: 'Software Programmer (Intern)',
@@ -37,11 +37,11 @@ final List<WorkExperienceModel> allWorkExperiences = [
     location: 'Kasim, Indonesia',
     period: 'Sept 2023 - Jan 2024',
     points: [
-      'Engineered a robust mobile overtime tracking system using Kotlin and Laravel, improving HR data accuracy.',
-      'Optimized complex database queries for real-time reporting across a workforce of 500+ employees.',
-      'Automated legacy manual logging processes, reducing administrative overhead by 40%.',
+      'Developed an Android-based attendance system using QR code for employee check-in.',
+      'Built features for overtime, business trip, and leave management.',
+      'Integrated the mobile app with backend services using Kotlin and Laravel.',
     ],
-    techStack: ['Kotlin', 'Android', 'Laravel', 'PostgreSQL', 'Query Optimization'],
+    techStack: ['Kotlin', 'Android', 'Laravel', 'PostgreSQL'],
   ),
   WorkExperienceModel(
     title: 'Computer Literacy Instructor',
@@ -49,9 +49,9 @@ final List<WorkExperienceModel> allWorkExperiences = [
     location: 'Yogyakarta, Indonesia',
     period: 'July 2023',
     points: [
-      'Designed and implemented a comprehensive IT curriculum for primary education levels.',
-      'Facilitated workshops on digital literacy, internet safety, and essential software tools for 100+ students.',
+      'Taught basic Microsoft Word and Excel to elementary school students.',
+      'Guided students in basic computer usage and digital literacy fundamentals.',
     ],
-    techStack: ['Curriculum Design', 'Public Speaking', 'Instructional Leadership'],
+    techStack: ['Microsoft Office', 'Public Speaking', 'Digital Literacy'],
   ),
 ];

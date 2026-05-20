@@ -41,9 +41,17 @@ const String resumeContext = """
     - SDN 001 Sungai Kunjang
 
   - Professional Experience:
-    - Backend Programmer (Intern) at RSU Mitra Paramedika Yogyakarta (Developing SIMRS with Laravel)
-    - Software Programmer (Intern) at PT. Kilang Pertamina Internasional RU VII Kasim (Kotlin & Laravel)
-    - Computer Literacy Instructor at SDN Sendangsari (KKN Program)
+    - Backend Programmer (Intern) at RSU Mitra Paramedika Yogyakarta (Oct 2025 - Apr 2026)
+      - Developed the inpatient (rawat inap) module of the SIMRS using Laravel
+      - Built backend features for patient records and hospitalization workflows
+      - Collaborated with the team to integrate the module with the overall hospital system
+    - Software Programmer (Intern) at PT. Kilang Pertamina Internasional RU VII Kasim (Sept 2023 - Jan 2024)
+      - Developed an Android-based attendance system using QR code for employee check-in
+      - Built features for overtime, business trip, and leave management
+      - Integrated the mobile app with backend services using Kotlin and Laravel
+    - Computer Literacy Instructor at SDN Sendangsari (KKN Program) (July 2023)
+      - Taught basic Microsoft Word and Excel to elementary school students
+      - Guided students in basic computer usage and digital literacy fundamentals
 
   ════════════════════
   TECH STACK

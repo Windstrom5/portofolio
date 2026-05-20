@@ -443,11 +443,11 @@ class ResumePdf {
             _buildAnchor('summary'),
             _sectionHeader('PROFESSIONAL_SUMMARY', accentPink),
             pw.Text(
-              'Versatile Full Stack Developer and Architect with a track record of building complex, high-impact systems. '
-              'Expert in Kotlin and Laravel for enterprise-grade solutions (WorkForce Management/Gym Systems), '
-              'and a pioneer in high-tech immersive web experiences (Portofolio OS). Currently pushing boundaries in '
-              'AI-driven audio processing and Unreal Engine 5 procedural content generation. '
-              'Committed to architectural integrity and scalable cross-platform deployment.',
+              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, '
+              'and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side '
+              'development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. '
+              'Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital '
+              'information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
               style: pw.TextStyle(
                 fontSize: 9,
                 color: textSecondary,
@@ -766,7 +766,7 @@ class ResumePdf {
               ],
             ),
             child: pw.Text(
-              'Results-oriented Software Engineer specializing in the design and orchestration of scalable enterprise ecosystems. Proficient in delivering robust backends with Laravel and high-integrity mobile applications with Kotlin. Demonstrated success in transforming complex business requirements into seamless digital products, from health-analytics gamification to workforce productivity suites. Dedicated to writing clean, maintainable code and steering projects from architectural conception to production-grade deployment.',
+              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
               textAlign: pw.TextAlign.justify,
               style: pw.TextStyle(
                   fontSize: 10, color: textSecondary, lineSpacing: 1.6),
@@ -1629,7 +1629,7 @@ class ResumePdf {
             ),
             pw.SizedBox(height: 8),
             pw.Text(
-              'Architectural-focused Full Stack Developer with specialized expertise in backend orchestration, mobile ecosystems, and innovative system simulations. Proven ability to deliver high-performance enterprise solutions, from automated workforce management systems to AI-powered multimedia research. Expertly bridges the gap between complex logic—such as procedural content generation in UE5 and neural vocal separation—and premium, user-centric interface design. Driven by technical excellence and the pursuit of scalable, future-proof engineering.',
+              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
               style: pw.TextStyle(
                   fontSize: 9.5, color: textSecondary, lineSpacing: 1.6),
               textAlign: pw.TextAlign.justify,
