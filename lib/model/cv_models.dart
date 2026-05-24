@@ -107,4 +107,13 @@ final List<AchievementModel> allAchievements = [
     skills: ["English Proficiency", "Listening", "Grammar", "Reading"],
     attachmentPath: "assets/TOEFL_Angga.pdf",
   ),
+  AchievementModel(
+    certificateName: "Internship Completion Certificate",
+    organizationName: "MagangHub",
+    date: "Apr 2026",
+    description:
+        "Official internship completion certificate issued through MagangHub for the Backend Programmer internship at RSU Mitra Paramedika Yogyakarta, validating hands-on experience in hospital information system development.",
+    skills: ["Backend Development", "Laravel", "SIMRS", "Internship"],
+    attachmentPath: "assets/sertifikat_3262617f-fef8-41f0-b8b9-9341452acf8d.pdf",
+  ),
 ];

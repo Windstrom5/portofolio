@@ -53,6 +53,11 @@ const String resumeContext = """
       - Taught basic Microsoft Word and Excel to elementary school students
       - Guided students in basic computer usage and digital literacy fundamentals
 
+  - Certifications:
+    - Internship Completion Certificate from MagangHub (Apr 2026)
+      - Issued for Backend Programmer internship at RSU Mitra Paramedika Yogyakarta
+      - Validates hands-on experience in hospital information system (SIMRS) development
+
   ════════════════════
   TECH STACK
   ════════════════════
