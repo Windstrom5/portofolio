@@ -295,7 +295,7 @@ class _ProjectDetailViewState extends State<ProjectDetailView> {
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.white24),
         ),
-        child: const Icon(FontAwesomeIcons.github, color: Colors.white70),
+        child: const FaIcon(FontAwesomeIcons.github, color: Colors.white70),
       ),
     );
   }

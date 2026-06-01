@@ -2365,7 +2365,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _socialLink(IconData icon, String tooltip, String url) {
+  Widget _socialLink(dynamic icon, String tooltip, String url) {
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -2383,7 +2383,7 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-          child: FaIcon(icon, color: Colors.cyanAccent, size: 20.sp),
+          child: icon is IconData ? Icon(icon, color: Colors.cyanAccent, size: 20.sp) : FaIcon(icon, color: Colors.cyanAccent, size: 20.sp),
         ),
       ),
     );
@@ -2816,7 +2816,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _dockIcon(int index, IconData icon, String tooltip) {
+  Widget _dockIcon(int index, dynamic icon, String tooltip) {
     bool isSelected = _selectedIndex == index;
     return Tooltip(
       message: tooltip,
@@ -2840,7 +2840,9 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
+              icon is IconData ? Icon(icon,
+                  color: isSelected ? const Color(0xFF50FA7B) : Colors.white,
+                  size: 24.r) : FaIcon(icon,
                   color: isSelected ? const Color(0xFF50FA7B) : Colors.white,
                   size: 24.r),
               SizedBox(height: 4.h),
@@ -2857,7 +2859,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _desktopShortcut(int? index, IconData icon, String label,
+  Widget _desktopShortcut(int? index, dynamic icon, String label,
       {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: index != null
@@ -2872,7 +2874,7 @@ class _HomePageState extends State<HomePage> {
           : onTap,
       child: Column(
         children: [
-          Icon(icon, size: 48.r, color: Colors.white),
+          icon is IconData ? Icon(icon, size: 48.r, color: Colors.white) : FaIcon(icon, size: 48.r, color: Colors.white),
           SizedBox(
             height: 32.h,
             child: Text(

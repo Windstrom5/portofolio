@@ -12,7 +12,7 @@ class LibraryItem {
   final List<String> tags;
   final String developer;
   final String releaseDate;
-  final IconData icon;
+  final dynamic icon;
   final Color accentColor;
   final int mainIndex;
   final double rating;
@@ -745,10 +745,10 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
     );
   }
 
-  Widget _sectionHeader(String title, IconData icon) {
+  Widget _sectionHeader(String title, dynamic icon) {
     return Row(
       children: [
-        Icon(icon, color: _accent, size: 18.sp),
+        icon is IconData ? Icon(icon, color: _accent, size: 18.sp) : FaIcon(icon, color: _accent, size: 18.sp),
         SizedBox(width: 10.w),
         Text(
           title.toUpperCase(),
@@ -883,7 +883,7 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
             ),
             ...genres.map((g) {
               final isActive = _activeGenre == g;
-              IconData gIcon;
+              dynamic gIcon;
               switch (g) {
                 case "Strategy": gIcon = Icons.grid_view; break;
                 case "Board Games": gIcon = Icons.table_chart; break;
@@ -942,7 +942,7 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
     );
   }
 
-  Widget _sidebarEntry(String label, IconData icon, bool active,
+  Widget _sidebarEntry(String label, dynamic icon, bool active,
       {VoidCallback? onTap}) {
     return Material(
       color: Colors.transparent,
@@ -961,7 +961,7 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
           ),
           child: Row(
             children: [
-              Icon(icon, color: active ? _accent : _textMuted, size: 15.sp),
+              icon is IconData ? Icon(icon, color: active ? _accent : _textMuted, size: 15.sp) : FaIcon(icon, color: active ? _accent : _textMuted, size: 15.sp),
               SizedBox(width: 12.w),
               Expanded(
                 child: Text(
@@ -1002,7 +1002,9 @@ class _ProjectLibraryWidgetState extends State<ProjectLibraryWidget>
           ),
           child: Row(
             children: [
-              Icon(item.icon,
+              item.icon is IconData ? Icon(item.icon,
+                  color: isActive ? Colors.white : item.accentColor,
+                  size: 13.sp) : FaIcon(item.icon,
                   color: isActive ? Colors.white : item.accentColor,
                   size: 13.sp),
               SizedBox(width: 10.w),

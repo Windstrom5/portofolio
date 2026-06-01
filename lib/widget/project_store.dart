@@ -141,7 +141,7 @@ class _ProjectStoreAppState extends State<ProjectStoreApp> {
       ),
       child: Row(
         children: [
-          Icon(FontAwesomeIcons.bagShopping,
+          FaIcon(FontAwesomeIcons.bagShopping,
               color: const Color(0xFFDA291C), size: 24.sp),
           SizedBox(width: 12.w),
           Text(

@@ -149,7 +149,7 @@ class _DiscordActivityWidgetState extends State<DiscordActivityWidget> {
                           color: Colors.indigoAccent.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: FaIcon(
                           FontAwesomeIcons.discord,
                           color: Colors.indigoAccent,
                           size: 18.sp,
@@ -341,7 +341,7 @@ class _DiscordActivityWidgetState extends State<DiscordActivityWidget> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.discord,
                   color: Colors.indigoAccent,
                   size: 24.sp,

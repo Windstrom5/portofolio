@@ -14,7 +14,7 @@ class _TechStackMarqueeState extends State<TechStackMarquee>
     with SingleTickerProviderStateMixin {
   late ScrollController _scrollController;
 
-  final Map<String, IconData> techStack = {
+  final Map<String, dynamic> techStack = {
     'Flutter': Icons.flutter_dash,
     'Kotlin': FontAwesomeIcons.android,
     'Vue.js': FontAwesomeIcons.vuejs,
@@ -68,7 +68,8 @@ class _TechStackMarqueeState extends State<TechStackMarquee>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(entry.value,
+                entry.value is IconData ? Icon(entry.value,
+                    color: Colors.cyanAccent.withValues(alpha: 0.3), size: 14.sp) : FaIcon(entry.value,
                     color: Colors.cyanAccent.withValues(alpha: 0.3), size: 14.sp),
                 SizedBox(width: 8.w),
                 Text(

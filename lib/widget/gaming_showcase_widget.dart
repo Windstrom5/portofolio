@@ -218,7 +218,7 @@ class _GamingShowcaseWidgetState extends State<GamingShowcaseWidget>
     );
   }
 
-  Widget _buildTab(int index, String label, IconData icon) {
+  Widget _buildTab(int index, String label, dynamic icon) {
     final isActive = _activeTab == index;
     final color = index == 0 ? _steamAccent : _malAccent;
     return GestureDetector(
@@ -236,7 +236,9 @@ class _GamingShowcaseWidgetState extends State<GamingShowcaseWidget>
         ),
         child: Row(
           children: [
-            FaIcon(icon,
+            icon is IconData ? Icon(icon,
+                size: 12.sp,
+                color: isActive ? color : Colors.white38) : FaIcon(icon,
                 size: 12.sp,
                 color: isActive ? color : Colors.white38),
             SizedBox(width: 8.w),
