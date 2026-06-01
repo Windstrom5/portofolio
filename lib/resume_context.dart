@@ -28,14 +28,13 @@ const String resumeContext = """
   - Name: Angga Nugraha
   - Alias: Windstrom5
   - Location: Yogyakarta, Indonesia
-  - Role: Full Stack Developer
+  - Role: Full Stack Developer (Backend Focused)
   - Focus:
-    - Web Development
-    - Android Development
-    - Backend Systems
-    - Software Architecture
+    - Backend Development (Laravel)
+    - Android Development (Kotlin)
+    - Web Development (Vue.js, Flutter)
   - Education History:
-    - Universitas Atma Jaya Yogyakarta (Information Systems)
+    - Universitas Atma Jaya Yogyakarta (S1 Teknik Informatika, GPA 3.54)
     - SMA Negeri 8 Samarinda
     - SMP Negeri 16 Samarinda
     - SDN 001 Sungai Kunjang
@@ -70,7 +69,7 @@ const String resumeContext = """
   - MySQL
   - REST API development
   - UI/UX-focused engineering
-  - Clean architecture & maintainable code
+  - Clean code practices
 
   ════════════════════
   REAL & VERIFIED PROJECTS

@@ -321,7 +321,7 @@ class ResumePdf {
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'FULL STACK DEVELOPER // BACKEND SPECIALIST',
+                    'FULL STACK DEVELOPER // BACKEND FOCUSED',
                     style: pw.TextStyle(
                       fontSize: 10,
                       fontWeight: pw.FontWeight.bold,
@@ -443,11 +443,10 @@ class ResumePdf {
             _buildAnchor('summary'),
             _sectionHeader('PROFESSIONAL_SUMMARY', accentPink),
             pw.Text(
-              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, '
-              'and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side '
-              'development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. '
-              'Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital '
-              'information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
+              'Full Stack Developer with strong expertise in backend development and system integration. '
+              'Experienced in building real-world applications in healthcare (SIMRS) and energy sectors using Laravel, Kotlin, '
+              'Flutter, and Vue.js. Able to translate business needs into scalable and efficient technical solutions. '
+              'Eager to grow and contribute through continuous learning and hands-on development.',
               style: pw.TextStyle(
                 fontSize: 9,
                 color: textSecondary,
@@ -473,17 +472,17 @@ class ResumePdf {
                     children: [
                       _buildAnchor('skills'),
                       _sectionHeader('TECHNICAL_STK', accentPink),
-                      _buildSkillLine('Kotlin / Android', 0.95, accentPink,
+                      _buildSkillLine('Kotlin / Android', 0.75, accentPink,
                           textPrimary, borderColor),
-                      _buildSkillLine('Laravel / PHP', 0.90, accentCyan,
+                      _buildSkillLine('Laravel / PHP', 0.80, accentCyan,
                           textPrimary, borderColor),
-                      _buildSkillLine('Flutter / Dart', 0.88, accentPink,
+                      _buildSkillLine('Flutter / Dart', 0.70, accentPink,
                           textPrimary, borderColor),
-                      _buildSkillLine('Vue.js / JS', 0.80, accentCyan,
+                      _buildSkillLine('Vue.js / JS', 0.65, accentCyan,
                           textPrimary, borderColor),
-                      _buildSkillLine('PostgreSQL', 0.85, accentPink,
+                      _buildSkillLine('PostgreSQL', 0.70, accentPink,
                           textPrimary, borderColor),
-                      _buildSkillLine('Git / CI-CD', 0.90, accentCyan,
+                      _buildSkillLine('Git / CI-CD', 0.65, accentCyan,
                           textPrimary, borderColor),
                     ],
                   ),
@@ -766,7 +765,7 @@ class ResumePdf {
               ],
             ),
             child: pw.Text(
-              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
+              'Full Stack Developer with strong expertise in backend development and system integration. Experienced in building real-world applications in healthcare (SIMRS) and energy sectors using Laravel, Kotlin, Flutter, and Vue.js. Able to translate business needs into scalable and efficient technical solutions. Eager to grow and contribute through continuous learning and hands-on development.',
               textAlign: pw.TextAlign.justify,
               style: pw.TextStyle(
                   fontSize: 10, color: textSecondary, lineSpacing: 1.6),
@@ -1629,7 +1628,7 @@ class ResumePdf {
             ),
             pw.SizedBox(height: 8),
             pw.Text(
-              'Detail-oriented Full Stack Developer with hands-on experience building backend systems, mobile applications, and web interfaces across healthcare and enterprise environments. Skilled in Laravel for scalable server-side development, Kotlin for native Android applications, and Vue.js for dynamic front-end experiences. Proven ability to translate complex business requirements into clean, maintainable solutions — from hospital information systems to workforce management tools. Driven by a passion for continuous learning and building technology that makes a real impact.',
+              'Full Stack Developer with strong expertise in backend development and system integration. Experienced in building real-world applications in healthcare (SIMRS) and energy sectors using Laravel, Kotlin, Flutter, and Vue.js. Able to translate business needs into scalable and efficient technical solutions. Eager to grow and contribute through continuous learning and hands-on development.',
               style: pw.TextStyle(
                   fontSize: 9.5, color: textSecondary, lineSpacing: 1.6),
               textAlign: pw.TextAlign.justify,

@@ -1256,7 +1256,7 @@ class _HomePageState extends State<HomePage> {
                             fontSize: 18.sp)),
                     SizedBox(height: 5.h),
                     Text(
-                      "Hello, I'm Angga Nugraha.\nFull Stack Developer based in Yogyakarta.\nEnthusiast in Gaming Tech & Innovation.",
+                      "Hello, I'm Angga Nugraha.\nFull Stack Developer based in Yogyakarta.\nBackend focused, always learning.",
                       style: whiteStyle.copyWith(height: 1.5),
                     ),
                     SizedBox(height: 15.h),
@@ -1631,7 +1631,7 @@ class _HomePageState extends State<HomePage> {
           // Hero Header
           _buildPageHeader(
             title: "PROFESSIONAL CERTIFICATIONS",
-            subtitle: "Verified credentials from global institutions",
+            subtitle: "Certificates and credentials earned",
             icon: Icons.verified,
             color: Colors.purpleAccent,
           ),
@@ -2160,7 +2160,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       child: Text(
-                        "FULL STACK DEVELOPER // BACKEND SPECIALIST",
+                        "FULL STACK DEVELOPER // BACKEND FOCUSED",
                         style: GoogleFonts.vt323(
                           color: Colors.cyanAccent,
                           fontSize: 12.sp,

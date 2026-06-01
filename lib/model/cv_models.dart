@@ -38,21 +38,21 @@ class AchievementModel {
 
 final List<EducationModel> allEducation = [
   EducationModel(
-    schoolName: "Universitas Atma Jaya",
+    schoolName: "Universitas Atma Jaya Yogyakarta",
     location: "Yogyakarta, Indonesia",
     years: "2020 - 2025",
-    degreeType: "BACHELOR OF INFORMATION SYSTEMS",
+    degreeType: "S1 - TEKNIK INFORMATIKA (GPA: 3.54)",
     description:
-        "A premier private university in Yogyakarta known for its rigorous curriculum in technology and business. The Information Systems program bridges the gap between technical software engineering and strategic business management.",
+        "Bachelor's degree in Informatics Engineering from Fakultas Teknik Industri. Focused on software development, database systems, and practical application building.",
     learnings:
-        "- Advanced Software Engineering.\n- Enterprise Systems Analysis & Design.\n- Business Intelligence & Data Mining.\n- Database Management (SQL/NoSQL).\n- IT Project Management & Agile Methodologies.",
+        "- Software Engineering & Development.\n- Web & Mobile Application Development.\n- Database Management (SQL).\n- Object-Oriented Programming.\n- Software Project Management.",
     skills: [
       "Software Engineering",
-      "System Analysis",
-      "Web/Android/Desktop",
-      "Data Mining",
-      "Project Management",
-      "UI/UX Design"
+      "Web Development",
+      "Mobile Development",
+      "Database",
+      "OOP",
+      "Project Management"
     ],
   ),
   EducationModel(
@@ -94,8 +94,8 @@ final List<AchievementModel> allAchievements = [
     organizationName: "British Council",
     date: "May 2024",
     description:
-        "Internationally recognized certification validating professional proficiency in English reading, writing, listening, and speaking.",
-    skills: ["C1 Advanced", "Business English", "Communication"],
+        "Internationally recognized English test from the British Council, assessing reading, writing, listening, and speaking skills.",
+    skills: ["English Proficiency", "Communication"],
     attachmentPath: "assets/EnglishScore.jpg",
   ),
   AchievementModel(
