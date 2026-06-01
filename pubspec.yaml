@@ -44,7 +44,7 @@ dependencies:
   htmltopdfwidgets: ^2.0.1
   flutter_html: ^3.0.0
   universal_html: ^2.3.0
-  font_awesome_flutter: ^10.12.0
+  font_awesome_flutter: ^11.0.0
   google_fonts: ^8.0.1
   url_launcher: ^6.3.2
   webview_flutter: ^4.13.1
