@@ -99,6 +99,21 @@ final List<AchievementModel> allAchievements = [
     attachmentPath: "assets/EnglishScore.jpg",
   ),
   AchievementModel(
+    certificateName: "Coding Camp Certificate of Attendance",
+    organizationName: "RevoU",
+    date: "Jun 2026",
+    description:
+        "Completed a 1-week Coding Camp by RevoU covering the fundamentals of HTML, CSS, and JavaScript. Gained hands-on experience in building basic web pages, applying responsive styling, and implementing simple interactive web features.",
+    skills: [
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "Web Development",
+      "Responsive Design"
+    ],
+    attachmentPath: "assets/revou_Certificate.jpg",
+  ),
+  AchievementModel(
     certificateName: "TOEFL ITP Certificate",
     organizationName: "IIEF",
     date: "Apr 2026",
