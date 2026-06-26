@@ -68,6 +68,39 @@ final List<ProjectModel> allProjects = [
     status: ProjectStatus.production,
   ),
   ProjectModel(
+    id: 'Audio_Player',
+    title: 'BitPerfect USB Audio Player',
+    shortDescription:
+        'Audiophile Android music player with bit-perfect USB DAC playback and advanced audio processing.',
+    description:
+        'A reference-grade Android music player and research platform built with Kotlin and Jetpack Compose. It implements a custom user-space USB Audio Class driver for direct bit-perfect playback, bypassing Android AudioFlinger, while providing AI-powered vocal separation, karaoke tools, DSP effects, AutoEQ headphone optimization, synchronized lyrics, and statistical audio benchmarking.',
+    iconUrl:
+        'https://cdn-icons-png.flaticon.com/512/3659/3659784.png',
+    bannerUrl:
+        'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/Audio-Player',
+    screenshots: [],
+    version: '1.0.0',
+    rating: 4.8,
+    downloadSize: 'Varies',
+    techStack: [
+      'Kotlin',
+      'Jetpack Compose',
+      'USB Audio',
+      'DSP',
+      'TensorFlow Lite',
+      'Room',
+      'Koin',
+      'SQLite',
+      'Android NDK/USB APIs',
+      'Data Analytics',
+    ],
+    completionDate: 'In Development',
+    repoUrl: 'https://github.com/Windstrom5/Audio-Player',
+    primaryLanguage: 'Kotlin',
+    platform: 'Android',
+    status: ProjectStatus.production,
+  ),
+  ProjectModel(
     id: 'Diet_Gamification',
     title: 'Diet Gamifikasi',
     shortDescription: 'Health & nutrition tracking app with gamification elements.',
@@ -143,7 +176,7 @@ final List<ProjectModel> allProjects = [
     downloadSize: '50 MB',
     techStack: [
       'Compose Multiplatform',
-      'Python AI',
+      'Python',
       'Machine Learning',
       'Audio Processing'
     ],
@@ -153,27 +186,6 @@ final List<ProjectModel> allProjects = [
     platform: 'Multiplatform',
     status: ProjectStatus.development,
     estimatedCompletion: 'Q4 2025',
-  ),
-  ProjectModel(
-    id: 'Fatebound-Quest',
-    title: 'Fatebound Quest',
-    shortDescription: 'UE5 Roguelike game with D&D-inspired mechanics.',
-    description:
-        'A Roguelike game built in Unreal Engine 5 with tile-based movement, dice-rolling mechanics inspired by Dungeons & Dragons, and procedurally generated levels. Currently a work in progress.',
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/188/188987.png',
-    bannerUrl:
-        'https://images.weserv.nl/?url=https://opengraph.githubassets.com/1/Windstrom5/DungeonQuest',
-    screenshots: [],
-    version: '0.5.0-WIP',
-    rating: 5.0,
-    downloadSize: '2.1 GB',
-    techStack: ['Unreal Engine 5', 'C++', 'Procedural Generation', 'Blueprints'],
-    completionDate: 'In Development',
-    repoUrl: 'https://github.com/Windstrom5/Unreal-Engine-Pokedex',
-    primaryLanguage: 'C++',
-    platform: 'PC',
-    status: ProjectStatus.development,
-    estimatedCompletion: '2026',
   ),
   ProjectModel(
     id: 'nihonGO',

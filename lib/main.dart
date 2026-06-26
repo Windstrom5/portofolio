@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'model/resume_generator.dart';
+import 'model/portfolio_generator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_test/widget/crt_overlay.dart';
 import 'package:project_test/widget/ai_chat_panel.dart';
@@ -716,7 +717,7 @@ class _HomePageState extends State<HomePage> {
       _showHelp();
     } else if (cmd == "ls") {
       additionalTerminalOutput.add(
-          "projects  certificates  education  profile  resume.pdf  tic_tac_toe  rock_paper_scissors  poker  chess  faraway  minesweeper  image_lab");
+          "projects  certificates  education  profile  resume.pdf  portfolio.pdf  tic_tac_toe  rock_paper_scissors  poker  chess  faraway  minesweeper  image_lab");
     } else if (cmd.startsWith("open ")) {
       String target = cmd.substring(5).trim();
       int? index;
@@ -744,16 +745,21 @@ class _HomePageState extends State<HomePage> {
         index = 12;
       else if (target == "image" || target == "image_lab")
         index = 10;
-      else if (target.startsWith("resume.pdf")) {
+      else if (target.startsWith("resume.pdf") || target.startsWith("cv.pdf")) {
         final bool isElegant =
             target.contains("--elegant") || target.contains("-e");
         final bool isPro = target.contains("--pro") || target.contains("-p");
+        final bool isAts = target.contains("--ats") || target.contains("-a");
 
         String themeType = 'midnight';
         String themeName = 'Midnight Cyber (Dark)';
         String fileName = 'resume_angga.pdf';
 
-        if (isElegant) {
+        if (isAts) {
+          themeType = 'ats';
+          themeName = 'ATS-Friendly (Single Column B&W)';
+          fileName = 'resume_angga_ats.pdf';
+        } else if (isElegant) {
           themeType = 'elegant';
           themeName = 'Professional Elegance (Light)';
           fileName = 'resume_angga_elegant.pdf';
@@ -773,6 +779,14 @@ class _HomePageState extends State<HomePage> {
         ResumePdf.downloadPdfWeb(pdfBytes, fileName);
         additionalTerminalOutput.add("Generating $themeName resume...");
         additionalTerminalOutput.add("Downloading $fileName...");
+        return;
+      } else if (target.startsWith("portfolio.pdf")) {
+        final pdfBytes = await PortfolioPdf().generate(
+          projects: allProjects,
+        );
+        PortfolioPdf.downloadPdfWeb(pdfBytes, 'portfolio_angga.pdf');
+        additionalTerminalOutput.add("Generating printable portfolio PDF...");
+        additionalTerminalOutput.add("Downloading portfolio_angga.pdf...");
         return;
       }
 
@@ -1081,6 +1095,8 @@ class _HomePageState extends State<HomePage> {
         "  open <name>            open section/file (projects, tic_tac_toe, faraway, minesweeper…)",
         "                         (Use 'open resume.pdf --elegant' for Professional Elegance)",
         "                         (Use 'open resume.pdf --pro' for Executive Zen Ultra-Premium)",
+        "                         (Use 'open resume.pdf --ats' for ATS-Friendly Layout)",
+        "                         (Use 'open portfolio.pdf' for Printable Project Portfolio)",
         "  ──────────────────────────────────────────────",
         "  whoami                 show current user",
         "  pwd                    print working directory",
@@ -1344,6 +1360,48 @@ class _HomePageState extends State<HomePage> {
                           label: const Text("apt-get install resume.pdf --pro"),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC5A059), // Gold
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final pdfBytes = await ResumePdf().generate(
+                              projects: allProjects,
+                              experiences: allWorkExperiences,
+                              education: allEducation,
+                              achievements: allAchievements,
+                              themeType: 'ats',
+                            );
+                            ResumePdf.downloadPdfWeb(
+                                pdfBytes, 'resume_angga_ats.pdf');
+                          },
+                          icon: const Icon(Icons.description, size: 16),
+                          label: const Text("apt-get install resume.pdf --ats"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF374151), // Dark Slate/Charcoal
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 15.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final pdfBytes = await PortfolioPdf().generate(
+                              projects: allProjects,
+                            );
+                            PortfolioPdf.downloadPdfWeb(
+                                pdfBytes, 'portfolio_angga.pdf');
+                          },
+                          icon: const Icon(Icons.work, size: 16),
+                          label: const Text("apt-get install portfolio.pdf"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F172A), // Deep Slate
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(
                                 horizontal: 10.w, vertical: 15.h),

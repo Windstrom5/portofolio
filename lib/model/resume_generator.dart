@@ -81,7 +81,15 @@ class ResumePdf {
     PdfColor textSecondary;
     PdfColor borderColor;
 
-    if (themeType == 'elegant') {
+    if (themeType == 'ats') {
+      mainBg = PdfColors.white;
+      surfaceColor = PdfColors.white;
+      accentCyan = PdfColors.black;
+      accentPink = PdfColors.black;
+      textPrimary = PdfColor.fromInt(0xFF111111);
+      textSecondary = PdfColor.fromInt(0xFF333333);
+      borderColor = PdfColor.fromInt(0xFFCCCCCC);
+    } else if (themeType == 'elegant') {
       // Professional Elegance: High-end executive styling
       mainBg = PdfColor.fromInt(0xFFFAFAFA); // Ultra subtle warm white
       surfaceColor = PdfColors.white;
@@ -112,9 +120,17 @@ class ResumePdf {
 
     final pageTheme = pw.PageTheme(
       pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(0),
+      margin: themeType == 'ats'
+          ? const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 40)
+          : const pw.EdgeInsets.all(0),
       theme: theme,
       buildBackground: (context) {
+        if (themeType == 'ats') {
+          return pw.FullPage(
+            ignoreMargins: true,
+            child: pw.Container(color: PdfColors.white),
+          );
+        }
         if (themeType == 'executive_zen') {
           return pw.FullPage(
             ignoreMargins: true,
@@ -169,9 +185,23 @@ class ResumePdf {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
-        footer: (context) =>
-            _buildFooter(isDarkTheme, textSecondary, accentCyan),
+        footer: (context) {
+          if (themeType == 'ats') {
+            return pw.Container(
+              alignment: pw.Alignment.centerRight,
+              padding: const pw.EdgeInsets.only(top: 10),
+              child: pw.Text(
+                'Page ${context.pageNumber} of ${context.pagesCount}',
+                style: pw.TextStyle(color: textSecondary, fontSize: 8),
+              ),
+            );
+          }
+          return _buildFooter(isDarkTheme, textSecondary, accentCyan);
+        },
         header: (context) {
+          if (themeType == 'ats') {
+            return pw.SizedBox();
+          }
           if (context.pageNumber > 1) {
             return pw.Container(
               padding:
@@ -205,7 +235,17 @@ class ResumePdf {
           final achievementsList =
               achievements.isEmpty ? allAchievements : achievements;
 
-          if (themeType == 'elegant') {
+          if (themeType == 'ats') {
+            return _buildAtsLayout(
+              projectsList,
+              experiencesList,
+              educationList,
+              achievementsList,
+              textPrimary,
+              textSecondary,
+              borderColor,
+            );
+          } else if (themeType == 'elegant') {
             return _buildElegantLayout(
               projectsList,
               experiencesList,
@@ -1697,7 +1737,7 @@ class ResumePdf {
             pw.Wrap(
               spacing: 20,
               runSpacing: 15,
-              children: projects.take(4).map((proj) {
+              children: projects.map((proj) {
                 return pw.Container(
                   width: 245,
                   child: _buildZenProjectItem(
@@ -2138,6 +2178,302 @@ class ResumePdf {
                       fontSize: 6,
                       color: accentCyan,
                       fontWeight: pw.FontWeight.bold))),
+        ],
+      ),
+    );
+  }
+
+  List<pw.Widget> _buildAtsLayout(
+    List<ProjectModel> projects,
+    List<WorkExperienceModel> experiences,
+    List<EducationModel> education,
+    List<AchievementModel> achievements,
+    PdfColor textPrimary,
+    PdfColor textSecondary,
+    PdfColor borderColor,
+  ) {
+    return [
+      pw.Center(
+        child: pw.Text(
+          'ANGGA NUGRAHA PUTRA',
+          style: pw.TextStyle(
+            fontSize: 22,
+            fontWeight: pw.FontWeight.bold,
+            color: textPrimary,
+          ),
+        ),
+      ),
+      pw.SizedBox(height: 5),
+      pw.Center(
+        child: pw.Text(
+          'Full Stack Developer (Backend Focused)',
+          style: pw.TextStyle(
+            fontSize: 12,
+            fontWeight: pw.FontWeight.bold,
+            color: textSecondary,
+          ),
+        ),
+      ),
+      pw.SizedBox(height: 8),
+      pw.Center(
+        child: pw.Text(
+          'Yogyakarta, Indonesia | anggagant@gmail.com | github.com/Windstrom5 | linkedin.com/in/angga-nugraha',
+          style: pw.TextStyle(
+            fontSize: 9,
+            color: textSecondary,
+          ),
+        ),
+      ),
+      pw.SizedBox(height: 15),
+
+      // 1. Professional Summary
+      _atsSectionHeader('PROFESSIONAL SUMMARY', textPrimary),
+      pw.Paragraph(
+        text:
+            'Detail-oriented Full Stack Developer with strong experience in backend architectures, REST APIs, and mobile applications. Proficient in Laravel, Kotlin, Vue.js, and Flutter. Proven ability to deliver production-grade systems in healthcare (SIMRS inpatient module) and corporate attendance management. Highly capable of collaborating in agile environments, maintaining clean codebases, and optimizing databases for performance and reliability.',
+        style: pw.TextStyle(fontSize: 9.5, color: textSecondary, lineSpacing: 1.4),
+      ),
+      pw.SizedBox(height: 10),
+
+      // 2. Work Experience
+      _atsSectionHeader('WORK EXPERIENCE', textPrimary),
+      ...experiences.map((exp) {
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 12),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    '${exp.title} - ${exp.company}',
+                    style: pw.TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textPrimary,
+                    ),
+                  ),
+                  pw.Text(
+                    exp.period,
+                    style: pw.TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'Location: ${exp.location} | Tech Stack: ${exp.techStack.join(", ")}',
+                style: pw.TextStyle(
+                  fontSize: 8.5,
+                  fontStyle: pw.FontStyle.italic,
+                  color: textSecondary,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              ...exp.points.map((pt) {
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(left: 8, bottom: 2),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('• ', style: pw.TextStyle(fontSize: 10, color: textPrimary)),
+                      pw.Expanded(
+                        child: pw.Text(
+                          pt,
+                          style: pw.TextStyle(fontSize: 9, color: textSecondary, lineSpacing: 1.2),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      }),
+      pw.SizedBox(height: 5),
+
+      // 3. Technical Skills
+      _atsSectionHeader('TECHNICAL SKILLS', textPrimary),
+      pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _atsSkillRow('Languages & Frameworks:', 'Kotlin, Java, PHP, Laravel, CodeIgniter, JavaScript, Vue.js, Flutter, Dart, C++', textPrimary, textSecondary),
+          _atsSkillRow('Database & Cloud:', 'PostgreSQL, MySQL, Database Design, SQL Query Optimization, REST APIs', textPrimary, textSecondary),
+          _atsSkillRow('Tools & Workflows:', 'Git, GitHub Actions, CI/CD, Agile/Scrum, Software Engineering, Linux/Bash', textPrimary, textSecondary),
+        ],
+      ),
+      pw.SizedBox(height: 10),
+
+      // 4. Key Projects
+      _atsSectionHeader('PROJECTS & DEVELOPMENTS', textPrimary),
+      ...projects.map((proj) {
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 10),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    '${proj.title} (${proj.platform})',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textPrimary,
+                    ),
+                  ),
+                  pw.Text(
+                    proj.completionDate,
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'Tech Stack: ${proj.techStack.join(", ")}${proj.repoUrl != null ? " | Repo: " + proj.repoUrl! : ""}',
+                style: pw.TextStyle(
+                  fontSize: 8.5,
+                  fontStyle: pw.FontStyle.italic,
+                  color: textSecondary,
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              pw.Text(
+                proj.description,
+                style: pw.TextStyle(fontSize: 9, color: textSecondary, lineSpacing: 1.3),
+              ),
+            ],
+          ),
+        );
+      }),
+      pw.SizedBox(height: 5),
+
+      // 5. Education
+      _atsSectionHeader('EDUCATION', textPrimary),
+      ...education.map((edu) {
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 8),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    edu.schoolName,
+                    style: pw.TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textPrimary,
+                    ),
+                  ),
+                  pw.Text(
+                    edu.years,
+                    style: pw.TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 1),
+              pw.Text(
+                '${edu.degreeType} | Location: ${edu.location}',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontStyle: pw.FontStyle.italic,
+                  color: textSecondary,
+                ),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                edu.learnings.replaceAll('\n', ' '),
+                style: pw.TextStyle(fontSize: 8.5, color: textSecondary),
+              ),
+            ],
+          ),
+        );
+      }),
+      pw.SizedBox(height: 5),
+
+      // 6. Certifications & Achievements
+      _atsSectionHeader('CERTIFICATIONS & ACHIEVEMENTS', textPrimary),
+      ...achievements.map((ach) {
+        return pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 4),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('• ', style: pw.TextStyle(fontSize: 10, color: textPrimary)),
+              pw.Expanded(
+                child: pw.RichText(
+                  text: pw.TextSpan(
+                    style: pw.TextStyle(fontSize: 9, color: textSecondary),
+                    children: [
+                      pw.TextSpan(
+                        text: '${ach.certificateName} ',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: textPrimary),
+                      ),
+                      pw.TextSpan(text: '- ${ach.organizationName} (${ach.date}): ${ach.description}'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    ];
+  }
+
+  pw.Widget _atsSectionHeader(String title, PdfColor textPrimary) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.SizedBox(height: 12),
+        pw.Text(
+          title,
+          style: pw.TextStyle(
+            fontSize: 12,
+            fontWeight: pw.FontWeight.bold,
+            color: textPrimary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        pw.SizedBox(height: 3),
+        pw.Divider(thickness: 1, color: textPrimary),
+        pw.SizedBox(height: 6),
+      ],
+    );
+  }
+
+  pw.Widget _atsSkillRow(String label, String value, PdfColor textPrimary, PdfColor textSecondary) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 3),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            '$label ',
+            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: textPrimary),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(fontSize: 9, color: textSecondary),
+            ),
+          ),
         ],
       ),
     );
